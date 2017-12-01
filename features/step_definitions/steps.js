@@ -1,16 +1,13 @@
 const { Given, When, Then } = require('cucumber')
 
 Given('{actor} pushed a branch to a code hosting service', async function (actor) {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+  await actor.pushBranch()
 })
 When('{actor} opens a pull request for that branch', async function (actor) {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+  await actor.openPullRequest()
 })
 Then('{actor} should see that deploy of a pr app has started', async function (actor) {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+  await actor.shouldSeeDeployStarted()
 })
 Given('the deploy of {actor}\'s pr app has started', async function (actor) {
   // Write code here that turns the phrase above into concrete actions

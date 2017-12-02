@@ -29,6 +29,13 @@ yarn start
 
 ## Testing
 
+Run core in-memory tests:
+
 ```
 yarn test
 ```
+
+Run with everything real (git, github). Needs a whole bunch of things though:
+
+`TEST_GH_REPO` existing github repo (with username/org) that will be used in tests to simulate user workflow
+`TEST_GH_USER_TOKEN` API token of that account

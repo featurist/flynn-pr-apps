@@ -1,15 +1,18 @@
 module.exports = class MemoryAssembly {
+  async setup () {}
   async start () {}
   async stop () {}
   createActor () {
     const codeHostingService = new MemoryCodeHostingService()
-    return new MemoryActor({codeHostingService})
+    const repo = new MemoryRepo()
+    return new MemoryActor({repo, codeHostingService})
   }
 }
 
 class MemoryActor {
-  constructor ({codeHostingService}) {
+  constructor ({repo, codeHostingService}) {
     this.codeHostingService = codeHostingService
+    this.repo = repo
   }
 
   async start () {}
@@ -20,7 +23,7 @@ class MemoryActor {
       name: 'Feature1'
     }
     this.currentBranch = branch
-    await this.codeHostingService.pushBranch(branch)
+    await this.repo.pushBranch(branch)
   }
 
   async openPullRequest () {
@@ -33,7 +36,6 @@ class MemoryActor {
 }
 
 class MemoryCodeHostingService {
-  async pushBranch (branch) {}
   async openPullRequest (branch) {
     return new MemoryPrNotifier()
   }
@@ -42,4 +44,8 @@ class MemoryCodeHostingService {
 class MemoryPrNotifier {
   async waitForDeployStarted () {
   }
+}
+
+class MemoryRepo {
+  async pushBranch (branch) {}
 }

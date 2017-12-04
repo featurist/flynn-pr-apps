@@ -29,10 +29,13 @@ module.exports = class GithubAssembly {
   }
 
   async start () {
-    this.prApps = createPrApps()
+    this.prApps = createPrApps({
+      ghRepo: process.env.TEST_GH_REPO,
+      ghUserToken: process.env.TEST_GH_USER_TOKEN
+    })
     this.prNotifier = createPrNotifier()
     this.prApps.use(this.prNotifier)
-    this.prApps.listen(9874)
+    this.prAppsServer = this.prApps.listen(9874)
 
     this.repo = new GitRepo()
     this.codeHostingService = new GithubService({prNotifier: this.prNotifier})
@@ -53,7 +56,9 @@ module.exports = class GithubAssembly {
   async stop () {
     await Promise.all([
       this.repo.destroy(),
-      promisify(this.prApps.close)()
+      this.prAppsServer
+        ? new Promise(resolve => this.prAppsServer.close(resolve))
+        : Promise.resolve()
     ])
   }
 
@@ -167,7 +172,7 @@ class CurrentPrNotifier {
       const currentDeployment = this.prNotifier.currentDeployment
       expect(currentDeployment).to.not.be.undefined // eslint-disable-line no-unused-expressions
       expect(currentDeployment.ref).to.eq(this.pr.head.ref)
-    }, 5000)
+    }, 10000)
   }
 }
 

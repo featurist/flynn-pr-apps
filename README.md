@@ -20,7 +20,10 @@ flynn env set APP_DEPLOY_SCRIPT=tools/deploy-pr-app
 
 ## Development
 
-`GH_REPO` and `GH_USER_TOKEN` environment variables need to be set.
+Needs some extra environment:
+
+`GH_REPO` github repo to deploy.
+`GH_USER_TOKEN` API token of the account that is able to pull code and create deployments on the above repo.
 
 ```
 git clone https://github.com/featurist/pr-apps
@@ -37,7 +40,11 @@ Run core in-memory tests:
 yarn test
 ```
 
-Run with everything real (git, github). Needs a whole bunch of things though:
+Run with everything real (git, github). Needs some extra environment:
 
-`TEST_GH_REPO` existing github repo (with username/org) that will be used in tests to simulate user workflow
-`TEST_GH_USER_TOKEN` API token of that account
+`TEST_GH_REPO` existing github repo (with username/org) that will be used in tests to simulate user workflow.
+`TEST_GH_USER_TOKEN` API token of the account that can has access (create webhooks, pull code) to the above repo.
+
+```
+yarn test-real
+```

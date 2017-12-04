@@ -5,52 +5,83 @@ const simpleGit = require('simple-git/promise')
 const GitHubApi = require('github')
 const tmp = require('tmp')
 const ngrok = require('ngrok')
+const retry = require('trytryagain')
+const {expect} = require('chai')
+const express = require('express')
+const createPrApps = require('../../..')
 
 const testGhRepoUrl = `https://${process.env.TEST_GH_USER_TOKEN}@github.com/${process.env.TEST_GH_REPO}.git`
 
-module.exports = class GithubAssembly {
-  constructor () {
-    this.repo = new GitRepo()
-    this.codeHostingService = new GithubService()
-  }
+function createPrNotifier () {
+  const app = express()
+  app.post('/deployments', ({body}, res) => {
+    app.currentDeployment = {
+      ref: body.deployment.ref
+    }
+    res.status(200).end()
+  })
+  return app
+}
 
+module.exports = class GithubAssembly {
   async setup () {
-    await this.codeHostingService.deleteNonMasterBranches()
-    await this.codeHostingService.deleteWebhooks()
-    const prAppsHost = await promisify(ngrok.connect)(9874)
-    await this.codeHostingService.createWebhook(`${prAppsHost}/payload`)
+    this.prAppsHost = await promisify(ngrok.connect)(9874)
   }
 
   async start () {
-    await this.repo.create()
+    this.prApps = createPrApps()
+    this.prNotifier = createPrNotifier()
+    this.prApps.use(this.prNotifier)
+    this.prApps.listen(9874)
+
+    this.repo = new GitRepo()
+    this.codeHostingService = new GithubService({prNotifier: this.prNotifier})
+
+    await Promise.all([
+      this.codeHostingService.deleteWebhooks(),
+      this.codeHostingService.closeAllPrs()
+    ])
+    await this.codeHostingService.deleteNonMasterBranches()
+
+    await Promise.all([
+      this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['push', 'pull_request']),
+      this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments`, ['deployment', 'deployment_status']),
+      this.repo.create()
+    ])
   }
 
   async stop () {
-    await this.repo.destroy()
+    await Promise.all([
+      this.repo.destroy(),
+      promisify(this.prApps.close)()
+    ])
   }
 
   createActor () {
-    // return new HumanActor({repo, codeHostingService})
-    return new HumanActor({repo: this.repo})
+    return new HumanActor({
+      repo: this.repo,
+      codeHostingService: this.codeHostingService
+    })
   }
 }
 
 class GithubService {
-  constructor () {
+  constructor ({prNotifier}) {
     [this.owner, this.repo] = process.env.TEST_GH_REPO.split('/')
     this.ghApi = new GitHubApi()
     this.ghApi.authenticate({
       type: 'token',
       token: process.env.TEST_GH_USER_TOKEN
     })
+    this.prNotifier = prNotifier
   }
 
-  async createWebhook (url) {
+  async createWebhook (url, events) {
     await this.ghApi.repos.createHook({
       owner: this.owner,
       repo: this.repo,
       name: 'web',
-      events: ['push', 'pull_request'],
+      events,
       active: true,
       config: {
         url,
@@ -80,6 +111,23 @@ class GithubService {
     )
   }
 
+  async closeAllPrs () {
+    const {data: prs} = await this.ghApi.pullRequests.getAll({
+      owner: this.owner,
+      repo: this.repo
+    })
+    return Promise.all(
+      prs.map(pr => {
+        return this.ghApi.pullRequests.update({
+          owner: this.owner,
+          repo: this.repo,
+          number: pr.number,
+          state: 'closed'
+        })
+      })
+    )
+  }
+
   async deleteWebhooks () {
     const {data: hooks} = await this.ghApi.repos.getHooks({
       owner: this.owner,
@@ -94,6 +142,32 @@ class GithubService {
         })
       })
     )
+  }
+
+  async openPullRequest (branch) {
+    const {data: pr} = await this.ghApi.pullRequests.create({
+      owner: this.owner,
+      repo: this.repo,
+      title: 'Adds Feature1',
+      head: branch,
+      base: 'master'
+    })
+    return new CurrentPrNotifier({prNotifier: this.prNotifier, pr})
+  }
+}
+
+class CurrentPrNotifier {
+  constructor ({prNotifier, pr}) {
+    this.prNotifier = prNotifier
+    this.pr = pr
+  }
+
+  async waitForDeployStarted () {
+    await retry(async () => {
+      const currentDeployment = this.prNotifier.currentDeployment
+      expect(currentDeployment).to.not.be.undefined // eslint-disable-line no-unused-expressions
+      expect(currentDeployment.ref).to.eq(this.pr.head.ref)
+    }, 5000)
   }
 }
 

@@ -6,7 +6,7 @@ module.exports = function () {
 
   app.use(bodyParser.json())
 
-  app.post('/payload', (req, res) => {
+  app.post('/webhook', (req, res) => {
     res.status(200).end()
   })
   return app

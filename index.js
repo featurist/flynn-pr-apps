@@ -47,5 +47,8 @@ module.exports = function ({
 }
 
 if (!module.parent) {
-  module.exports().listen(process.env.PORT || 9891)
+  module.exports({
+    ghRepo: process.env.GH_REPO,
+    ghUserToken: process.env.GH_USER_TOKEN
+  }).listen(process.env.PORT || 9891)
 }

@@ -20,6 +20,8 @@ flynn env set APP_DEPLOY_SCRIPT=tools/deploy-pr-app
 
 ## Development
 
+`GH_REPO` and `GH_USER_TOKEN` environment variables need to be set.
+
 ```
 git clone https://github.com/featurist/pr-apps
 nvm use

@@ -1,22 +1,25 @@
 # PR apps
 
+Automatically deploy pull requests into flynn cluster. AKA Heroku review apps DIY.
+
 ## Usage
 
 ```
 git clone https://github.com/featurist/pr-apps
 cd pr-apps
 flynn create pr-apps
+flynn env set GH_REPO
+flynn env set GH_USER_TOKEN
+flynn env set APP_DEPLOY_SCRIPT=tools/deploy-pr-app
+flynn env set FLYNN_CLUSTER_DOMAIN=prs.example.com
 git push flynn master
 ```
 
-By default on each pr create/update it will create a flynn app `pr-${PR_NUMBER}` if it does not exist, checkout pr code and push it flynn.
-Once deploy is complete, the pr app is accessible on `https://pr-${PR_NUMBER}.${FLYNN_CLUSTER_DOMAIN}`.
+The actual deployment needs to be scripted by user. pr-apps is simply going to run that script (specified by `FLYNN_CLUSTER_DOMAIN`) passing an app name - `pr-${PR_NUMBER}` - as an argument.
 
-Should you wish a custom deploy script, you can do so by setting `APP_DEPLOY_SCRIPT` environment variable:
+The script should deploy the app here `https://pr-${PR_NUMBER}.${FLYNN_CLUSTER_DOMAIN}` because that link is going to be posted to github as deployment link.
 
-```
-flynn env set APP_DEPLOY_SCRIPT=tools/deploy-pr-app
-```
+This is likely to change in future as we're perfectly able to deploy based on some kind of a json manifest.
 
 ## Development
 

@@ -8,14 +8,18 @@ const ngrok = require('ngrok')
 const retry = require('trytryagain')
 const {expect} = require('chai')
 const express = require('express')
+const bodyParser = require('body-parser')
+const morgan = require('morgan')
 const PrApps = require('../../../lib/prApps')
 const GithubApiAdapter = require('../../../lib/githubApiAdapter')
 const createPrAppsApp = require('../../..')
 
 const testGhRepoUrl = `https://${process.env.TEST_GH_USER_TOKEN}@github.com/${process.env.TEST_GH_REPO}.git`
 
-function createPrNotifier () {
+function createPrNotifierApp () {
   const app = express()
+  app.use(bodyParser.json())
+  app.use(morgan('dev'))
   app.post('/deployments', ({body}, res) => {
     app.currentDeployment = {
       ref: body.deployment.ref
@@ -27,7 +31,10 @@ function createPrNotifier () {
 
 module.exports = class GithubAssembly {
   async setup () {
-    this.prAppsHost = await promisify(ngrok.connect)(9874)
+    [this.prAppsHost, this.prNotifiedHost] = await Promise.all([
+      promisify(ngrok.connect)(9874),
+      promisify(ngrok.connect)(9875)
+    ])
   }
 
   async start () {
@@ -37,12 +44,13 @@ module.exports = class GithubAssembly {
     })
     const prApps = new PrApps({codeHostingServiceApi})
     this.prAppsApp = createPrAppsApp(prApps)
-    this.prNotifier = createPrNotifier()
-    this.prAppsApp.use(this.prNotifier)
     this.prAppsServer = this.prAppsApp.listen(9874)
 
+    this.prNotifierApp = createPrNotifierApp()
+    this.prNotifierServer = this.prNotifierApp.listen(9875)
+
     this.repo = new GitRepo()
-    this.codeHostingService = new GithubService({prNotifier: this.prNotifier})
+    this.codeHostingService = new GithubService({prNotifier: this.prNotifierApp})
 
     await Promise.all([
       this.codeHostingService.deleteWebhooks(),
@@ -52,7 +60,7 @@ module.exports = class GithubAssembly {
 
     await Promise.all([
       this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['push', 'pull_request']),
-      this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments`, ['deployment', 'deployment_status']),
+      this.codeHostingService.createWebhook(`${this.prNotifiedHost}/deployments`, ['deployment', 'deployment_status']),
       this.repo.create()
     ])
   }
@@ -62,6 +70,9 @@ module.exports = class GithubAssembly {
       this.repo.destroy(),
       this.prAppsServer
         ? new Promise(resolve => this.prAppsServer.close(resolve))
+        : Promise.resolve(),
+      this.prNotifierServer
+        ? new Promise(resolve => this.prNotifierServer.close(resolve))
         : Promise.resolve()
     ])
   }

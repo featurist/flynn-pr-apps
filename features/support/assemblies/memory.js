@@ -1,51 +1,60 @@
+const PrApps = require('../../../lib/prApps')
+const {expect} = require('chai')
+
 module.exports = class MemoryAssembly {
   async setup () {}
   async start () {}
   async stop () {}
   createActor () {
-    const codeHostingService = new MemoryCodeHostingService()
-    const repo = new MemoryRepo()
-    return new MemoryActor({repo, codeHostingService})
+    const prApps = new PrApps({
+      codeHostingServiceApi: new MemoryCodeHostingServiceApi()
+    })
+    const codeHostingService = new MemoryCodeHostingService({prApps})
+    return new MemoryActor({prApps, codeHostingService})
   }
 }
 
 class MemoryActor {
-  constructor ({repo, codeHostingService}) {
+  constructor ({prApps, codeHostingService}) {
+    this.prApps = prApps
     this.codeHostingService = codeHostingService
-    this.repo = repo
   }
 
   async start () {}
   async stop () {}
 
-  async pushBranch () {
-    const branch = {
-      name: 'Feature1'
-    }
-    this.currentBranch = branch
-    await this.repo.pushBranch(branch)
-  }
+  async pushBranch () {}
 
   async openPullRequest () {
     this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
   }
 
   async shouldSeeDeployStarted () {
-    await this.currentPrNotifier.waitForDeployStarted()
+    this.currentPrNotifier.waitForDeployStarted()
   }
 }
 
 class MemoryCodeHostingService {
+  constructor ({prApps}) {
+    this.prApps = prApps
+  }
+
   async openPullRequest (branch) {
-    return new MemoryPrNotifier()
+    await this.prApps.deployPullRequest(branch)
+    return {
+      waitForDeployStarted: () => {
+        expect(this.prApps.codeHostingServiceApi.createDeployRequests).to.eql([{branch}])
+      }
+    }
   }
 }
 
-class MemoryPrNotifier {
-  async waitForDeployStarted () {
+class MemoryCodeHostingServiceApi {
+  constructor () {
+    this.createDeployRequests = []
   }
-}
 
-class MemoryRepo {
-  async pushBranch (branch) {}
+  async createDeployment (branch) {
+    this.createDeployRequests.push({branch})
+  }
 }

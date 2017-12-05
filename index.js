@@ -1,8 +1,9 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
-const CodeHostingService = require('./lib/github')
 const debug = require('debug')('pr-apps')
+const GithubApiAdapter = require('./lib/githubApiAdapter')
+const PrApps = require('./lib/prApps')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -15,17 +16,8 @@ function handleErrors (fn) {
   }
 }
 
-module.exports = function ({
-  ghUserToken,
-  ghRepo
-}) {
+module.exports = function (prApps) {
   const app = express()
-  const [owner, repo] = ghRepo.split('/')
-  const codeHostingService = new CodeHostingService({
-    token: ghUserToken,
-    owner,
-    repo
-  })
 
   app.use(bodyParser.json())
   if (debug.enabled) {
@@ -38,7 +30,7 @@ module.exports = function ({
 
     if (eventType === 'pull_request') {
       const branch = req.body.pull_request.head.ref
-      await codeHostingService.createDeployment(branch)
+      await prApps.deployPullRequest(branch)
     }
     res.status(200).end()
   }))
@@ -47,8 +39,12 @@ module.exports = function ({
 }
 
 if (!module.parent) {
-  module.exports({
-    ghRepo: process.env.GH_REPO,
-    ghUserToken: process.env.GH_USER_TOKEN
-  }).listen(process.env.PORT || 9891)
+  const codeHostingServiceApi = new GithubApiAdapter({
+    token: process.env.GH_USER_TOKEN,
+    repo: process.env.GH_REPO
+  })
+  const prApps = new PrApps({
+    codeHostingServiceApi
+  })
+  module.exports(prApps).listen(process.env.PORT || 9891)
 }

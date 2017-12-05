@@ -8,7 +8,9 @@ const ngrok = require('ngrok')
 const retry = require('trytryagain')
 const {expect} = require('chai')
 const express = require('express')
-const createPrApps = require('../../..')
+const PrApps = require('../../../lib/prApps')
+const GithubApiAdapter = require('../../../lib/githubApiAdapter')
+const createPrAppsApp = require('../../..')
 
 const testGhRepoUrl = `https://${process.env.TEST_GH_USER_TOKEN}@github.com/${process.env.TEST_GH_REPO}.git`
 
@@ -29,13 +31,15 @@ module.exports = class GithubAssembly {
   }
 
   async start () {
-    this.prApps = createPrApps({
-      ghRepo: process.env.TEST_GH_REPO,
-      ghUserToken: process.env.TEST_GH_USER_TOKEN
+    const codeHostingServiceApi = new GithubApiAdapter({
+      repo: process.env.TEST_GH_REPO,
+      token: process.env.TEST_GH_USER_TOKEN
     })
+    const prApps = new PrApps({codeHostingServiceApi})
+    this.prAppsApp = createPrAppsApp(prApps)
     this.prNotifier = createPrNotifier()
-    this.prApps.use(this.prNotifier)
-    this.prAppsServer = this.prApps.listen(9874)
+    this.prAppsApp.use(this.prNotifier)
+    this.prAppsServer = this.prAppsApp.listen(9874)
 
     this.repo = new GitRepo()
     this.codeHostingService = new GithubService({prNotifier: this.prNotifier})

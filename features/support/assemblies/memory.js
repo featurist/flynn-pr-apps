@@ -43,7 +43,12 @@ class MemoryCodeHostingService {
     await this.prApps.deployPullRequest(branch)
     return {
       waitForDeployStarted: () => {
-        expect(this.prApps.codeHostingServiceApi.createDeployRequests).to.eql([{branch}])
+        expect(this.prApps.codeHostingServiceApi.updateDeployStatusRequests).to.eql(
+          [{
+            branch,
+            status: 'pending'
+          }]
+        )
       }
     }
   }
@@ -51,10 +56,19 @@ class MemoryCodeHostingService {
 
 class MemoryCodeHostingServiceApi {
   constructor () {
-    this.createDeployRequests = []
+    this.updateDeployStatusRequests = []
   }
 
   async createDeployment (branch) {
-    this.createDeployRequests.push({branch})
+    return {
+      branch
+    }
+  }
+
+  async updateDeploymentStatus (deployment, status) {
+    this.updateDeployStatusRequests.push({
+      branch: deployment.branch,
+      status
+    })
   }
 }

@@ -101,9 +101,11 @@ class CurrentPrNotifier {
 
   async waitForDeployStarted () {
     await retry(async () => {
-      const currentDeployment = this.prNotifier.currentDeployment
-      expect(currentDeployment).to.not.be.undefined // eslint-disable-line no-unused-expressions
-      expect(currentDeployment.ref).to.eq(this.pr.head.ref)
+      const currentDeploymentStatus = this.prNotifier.currentDeploymentStatus
+      expect(currentDeploymentStatus).to.eql({
+        ref: this.pr.head.ref,
+        state: 'pending'
+      })
     }, 10000)
   }
 }

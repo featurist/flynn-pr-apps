@@ -41,7 +41,7 @@ module.exports = class GithubAssembly {
 
     await Promise.all([
       this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['push', 'pull_request']),
-      this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments`, ['deployment', 'deployment_status']),
+      this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments_test`, ['deployment_status']),
       this.repo.create()
     ])
   }

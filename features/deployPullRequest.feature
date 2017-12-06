@@ -8,7 +8,7 @@ Feature: Deploy Github pull request
   Scenario: Pr author is notified when deploy is complete
     Given the deploy of Frank's pr app has started
     When the deploy is complete
-    Then Frank is notified that the deploy is complete
+    Then Frank sees that the deploy is complete
 
   Scenario: Pr author visits deployed app
     Given Frank received a notification that his pr app deploy is complete

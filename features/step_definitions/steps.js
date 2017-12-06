@@ -10,16 +10,15 @@ Then('{actor} should see that deploy of a pr app has started', async function (a
   await actor.shouldSeeDeployStarted()
 })
 Given('the deploy of {actor}\'s pr app has started', async function (actor) {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+  await actor.pushBranch()
+  await actor.openPullRequest()
+  this.currentActor = actor
 })
 When('the deploy is complete', async function () {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+  await this.currentActor.shouldSeeDeployFinished()
 })
-Then('{actor} is notified that the deploy is complete', async function (actor) {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+Then('{actor} sees that the deploy is complete', async function (actor) {
+  await actor.shouldSeeDeploySuccessful()
 })
 Given('{actor} received a notification that his pr app deploy is complete', async function (actor) {
   // Write code here that turns the phrase above into concrete actions

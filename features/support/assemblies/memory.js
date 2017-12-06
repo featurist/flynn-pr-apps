@@ -7,7 +7,9 @@ module.exports = class MemoryAssembly {
   async stop () {}
   createActor () {
     const prApps = new PrApps({
-      codeHostingServiceApi: new MemoryCodeHostingServiceApi()
+      codeHostingServiceApi: new MemoryCodeHostingServiceApi(),
+      scmProject: new ScmProjectMemory(),
+      deployScript: new DeployScriptMemory()
     })
     const codeHostingService = new MemoryCodeHostingService({prApps})
     return new MemoryActor({prApps, codeHostingService})
@@ -32,6 +34,14 @@ class MemoryActor {
   async shouldSeeDeployStarted () {
     this.currentPrNotifier.waitForDeployStarted()
   }
+
+  async shouldSeeDeployFinished () {
+    this.currentPrNotifier.waitForDeployFinished()
+  }
+
+  async shouldSeeDeploySuccessful () {
+    this.currentPrNotifier.waitForDeploySuccessful()
+  }
 }
 
 class MemoryCodeHostingService {
@@ -41,16 +51,36 @@ class MemoryCodeHostingService {
 
   async openPullRequest (branch) {
     await this.prApps.deployPullRequest(branch)
-    return {
-      waitForDeployStarted: () => {
-        expect(this.prApps.codeHostingServiceApi.updateDeployStatusRequests).to.eql(
-          [{
-            branch,
-            status: 'pending'
-          }]
-        )
+    return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
+  }
+}
+
+class PrNotifier {
+  constructor (codeHostingServiceApi, branch) {
+    this.codeHostingServiceApi = codeHostingServiceApi
+    this.branch = branch
+  }
+
+  waitForDeployStarted () {
+    expect(this.codeHostingServiceApi.updateDeployStatusRequests[0]).to.eql(
+      {
+        branch: this.branch,
+        status: 'pending'
       }
-    }
+    )
+  }
+
+  waitForDeployFinished () {
+    expect(this.codeHostingServiceApi.updateDeployStatusRequests.length).to.eq(2)
+  }
+
+  waitForDeploySuccessful () {
+    expect(this.codeHostingServiceApi.updateDeployStatusRequests[1]).to.eql(
+      {
+        branch: this.branch,
+        status: 'success'
+      }
+    )
   }
 }
 
@@ -70,5 +100,17 @@ class MemoryCodeHostingServiceApi {
       branch: deployment.branch,
       status
     })
+  }
+}
+
+class ScmProjectMemory {
+  async clone () {
+    return '/path/to/workspace'
+  }
+}
+
+class DeployScriptMemory {
+  async runIn (dir) {
+    expect(dir).to.eq('/path/to/workspace')
   }
 }

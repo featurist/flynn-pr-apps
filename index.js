@@ -4,6 +4,8 @@ const morgan = require('morgan')
 const debug = require('debug')('pr-apps')
 const GithubApiAdapter = require('./lib/githubApiAdapter')
 const PrApps = require('./lib/prApps')
+const GitProject = require('./lib/gitProject')
+const DeployScript = require('./lib/deployScript')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -43,8 +45,12 @@ if (!module.parent) {
     token: process.env.GH_USER_TOKEN,
     repo: process.env.GH_REPO
   })
+  const scmProject = new GitProject()
+  const deployScript = new DeployScript()
   const prApps = new PrApps({
-    codeHostingServiceApi
+    codeHostingServiceApi,
+    scmProject,
+    deployScript
   })
   module.exports(prApps).listen(process.env.PORT || 9891)
 }

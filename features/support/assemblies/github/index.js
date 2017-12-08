@@ -2,6 +2,8 @@ const {promisify} = require('util')
 const ngrok = require('ngrok')
 const PrApps = require('../../../../lib/prApps')
 const GithubApiAdapter = require('../../../../lib/githubApiAdapter')
+const GitProject = require('../../../../lib/gitProject')
+const DeployScript = require('../../../../lib/deployScript')
 const createPrAppsApp = require('../../../..')
 const createPrNotifierApp = require('./prNotifierApp')
 const GithubService = require('./githubService')
@@ -19,7 +21,15 @@ module.exports = class GithubAssembly {
       repo: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN
     })
-    const prApps = new PrApps({codeHostingServiceApi})
+    const scmProject = new GitProject({
+      remoteUrl: testGhRepoUrl
+    })
+    const deployScript = new DeployScript()
+    const prApps = new PrApps({
+      codeHostingServiceApi,
+      scmProject,
+      deployScript
+    })
     this.prAppsApp = createPrAppsApp(prApps)
     this.prNotifierApp = createPrNotifierApp()
     this.prAppsApp.use(this.prNotifierApp)
@@ -86,5 +96,13 @@ class ApiActor {
 
   async shouldSeeDeployStarted () {
     await this.currentPrNotifier.waitForDeployStarted()
+  }
+
+  async shouldSeeDeployFinished () {
+    await this.currentPrNotifier.waitForDeployFinished()
+  }
+
+  async shouldSeeDeploySuccessful () {
+    await this.currentPrNotifier.waitForDeploySuccessful()
   }
 }

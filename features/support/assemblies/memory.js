@@ -110,7 +110,7 @@ class ScmProjectMemory {
 }
 
 class DeployScriptMemory {
-  async runIn (dir) {
-    expect(dir).to.eq('/path/to/workspace')
+  run ({cwd}) {
+    expect(cwd).to.eq('/path/to/workspace')
   }
 }

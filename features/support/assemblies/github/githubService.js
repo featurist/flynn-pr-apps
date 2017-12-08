@@ -101,11 +101,27 @@ class CurrentPrNotifier {
 
   async waitForDeployStarted () {
     await retry(async () => {
-      const currentDeploymentStatus = this.prNotifier.currentDeploymentStatus
+      const currentDeploymentStatus = this.prNotifier.deploymentStatusEvents[0]
       expect(currentDeploymentStatus).to.eql({
         ref: this.pr.head.ref,
         state: 'pending'
       })
-    }, 10000)
+    }, {timeout: 10000})
+  }
+
+  async waitForDeployFinished () {
+    await retry(async () => {
+      expect(this.prNotifier.deploymentStatusEvents.length).to.eq(2)
+    }, {timeout: 10000})
+  }
+
+  async waitForDeploySuccessful () {
+    await retry(async () => {
+      const currentDeploymentStatus = this.prNotifier.deploymentStatusEvents[1]
+      expect(currentDeploymentStatus).to.eql({
+        ref: this.pr.head.ref,
+        state: 'success'
+      })
+    }, {timeout: 10000})
   }
 }

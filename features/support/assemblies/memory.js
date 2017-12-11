@@ -9,8 +9,7 @@ module.exports = class MemoryAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: new MemoryCodeHostingServiceApi(),
       scmProject: new ScmProjectMemory(),
-      deployScript: new DeployScriptMemory(),
-      prAppsClusterDomain: 'prs.example.com'
+      flynnService: new FlynnServiceMemory('prs.example.com')
     })
     const codeHostingService = new MemoryCodeHostingService({prApps})
     return new MemoryActor({prApps, codeHostingService})
@@ -42,11 +41,12 @@ class MemoryActor {
   }
 
   async shouldSeeDeploySuccessful () {
-    this.deployedAppUrl = this.currentPrNotifier.waitForDeploySuccessful()
+    this.currentPrNotifier.waitForDeploySuccessful()
   }
 
   async followDeployedAppLink () {
-    expect(this.deployedAppUrl).to.eq(`https://pr-${this.currentPrNotifier.prNumber}.prs.example.com`)
+    const deployedAppUrl = this.prApps.flynnService.lastDeployedAppUrl
+    expect(deployedAppUrl).to.eq(`https://pr-${this.currentPrNotifier.prNumber}.prs.example.com`)
   }
 
   async shouldSeeDeployedApp () {}
@@ -113,12 +113,21 @@ class MemoryCodeHostingServiceApi {
 
 class ScmProjectMemory {
   async clone () {
-    return '/path/to/workspace'
+    return {
+      push () {}
+    }
   }
 }
 
-class DeployScriptMemory {
-  run ({cwd}) {
-    expect(cwd).to.eq('/path/to/workspace')
+class FlynnServiceMemory {
+  constructor (clusterUrl) {
+    this.clusterUrl = clusterUrl
+  }
+
+  async createApp (appName) {
+    this.lastDeployedAppUrl = `https://${appName}.${this.clusterUrl}`
+    return {
+      webUrl: this.lastDeployedAppUrl
+    }
   }
 }

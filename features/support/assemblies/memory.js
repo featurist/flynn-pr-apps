@@ -9,7 +9,8 @@ module.exports = class MemoryAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: new MemoryCodeHostingServiceApi(),
       scmProject: new ScmProjectMemory(),
-      deployScript: new DeployScriptMemory()
+      deployScript: new DeployScriptMemory(),
+      prAppsClusterDomain: 'prs.example.com'
     })
     const codeHostingService = new MemoryCodeHostingService({prApps})
     return new MemoryActor({prApps, codeHostingService})
@@ -28,6 +29,7 @@ class MemoryActor {
   async pushBranch () {}
 
   async openPullRequest () {
+    this.currentBranch = 'Feature1'
     this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
   }
 
@@ -40,8 +42,14 @@ class MemoryActor {
   }
 
   async shouldSeeDeploySuccessful () {
-    this.currentPrNotifier.waitForDeploySuccessful()
+    this.deployedAppUrl = this.currentPrNotifier.waitForDeploySuccessful()
   }
+
+  async followDeployedAppLink () {
+    expect(this.deployedAppUrl).to.eq(`https://pr-${this.currentPrNotifier.prNumber}.prs.example.com`)
+  }
+
+  async shouldSeeDeployedApp () {}
 }
 
 class MemoryCodeHostingService {
@@ -50,24 +58,24 @@ class MemoryCodeHostingService {
   }
 
   async openPullRequest (branch) {
-    await this.prApps.deployPullRequest(branch)
-    return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
+    this.prNumber = 23
+    await this.prApps.deployPullRequest({branch, prNumber: this.prNumber})
+    return new PrNotifier(this.prApps.codeHostingServiceApi, branch, this.prNumber)
   }
 }
 
 class PrNotifier {
-  constructor (codeHostingServiceApi, branch) {
+  constructor (codeHostingServiceApi, branch, prNumber) {
     this.codeHostingServiceApi = codeHostingServiceApi
     this.branch = branch
+    this.prNumber = prNumber
   }
 
   waitForDeployStarted () {
-    expect(this.codeHostingServiceApi.updateDeployStatusRequests[0]).to.eql(
-      {
-        branch: this.branch,
-        status: 'pending'
-      }
-    )
+    const {branch, status} = this.codeHostingServiceApi.updateDeployStatusRequests[0]
+
+    expect(branch).to.eq(this.branch)
+    expect(status).to.eq('pending')
   }
 
   waitForDeployFinished () {
@@ -75,12 +83,11 @@ class PrNotifier {
   }
 
   waitForDeploySuccessful () {
-    expect(this.codeHostingServiceApi.updateDeployStatusRequests[1]).to.eql(
-      {
-        branch: this.branch,
-        status: 'success'
-      }
-    )
+    const {branch, status, deployedAppUrl} = this.codeHostingServiceApi.updateDeployStatusRequests[1]
+    expect(branch).to.eq(this.branch)
+    expect(status).to.eq('success')
+
+    return deployedAppUrl
   }
 }
 
@@ -95,10 +102,11 @@ class MemoryCodeHostingServiceApi {
     }
   }
 
-  async updateDeploymentStatus (deployment, status) {
+  async updateDeploymentStatus (deployment, status, deployedAppUrl) {
     this.updateDeployStatusRequests.push({
       branch: deployment.branch,
-      status
+      status,
+      deployedAppUrl
     })
   }
 }

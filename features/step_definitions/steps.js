@@ -21,14 +21,13 @@ Then('{actor} sees that the deploy is complete', async function (actor) {
   await actor.shouldSeeDeploySuccessful()
 })
 Given('{actor} received a notification that his pr app deploy is complete', async function (actor) {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+  await actor.pushBranch()
+  await actor.openPullRequest()
+  await actor.shouldSeeDeploySuccessful()
 })
 When('{actor} follows the link in the notifiation', async function (actor) {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+  await actor.followDeployedAppLink()
 })
 Then('{actor} sees the deployed app', async function (actor) {
-  // Write code here that turns the phrase above into concrete actions
-  return 'pending'
+  await actor.shouldSeeDeployedApp()
 })

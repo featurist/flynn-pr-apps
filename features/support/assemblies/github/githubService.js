@@ -13,7 +13,7 @@ module.exports = class GithubService {
     this.prNotifier = prNotifier
   }
 
-  async createWebhook (url, events) {
+  async createWebhook (url, events, secret) {
     await this.ghApi.repos.createHook({
       owner: this.owner,
       repo: this.repo,
@@ -23,6 +23,7 @@ module.exports = class GithubService {
       config: {
         url,
         content_type: 'json',
+        secret,
         insecure_ssl: '1'
       }
     })

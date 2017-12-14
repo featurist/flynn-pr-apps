@@ -50,7 +50,11 @@ module.exports = class GithubAssembly {
       scmProject,
       flynnService
     })
-    this.prAppsApp = createPrAppsApp(prApps)
+    const webhookSecret = 'webhook secret'
+    this.prAppsApp = createPrAppsApp({
+      webhookSecret,
+      prApps
+    })
     this.prNotifierApp = createPrNotifierApp()
     this.prAppsApp.use(this.prNotifierApp)
 
@@ -70,7 +74,7 @@ module.exports = class GithubAssembly {
     await this.codeHostingService.deleteNonMasterBranches()
 
     await Promise.all([
-      this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['push', 'pull_request']),
+      this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['push', 'pull_request'], webhookSecret),
       this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments_test`, ['deployment_status']),
       this.userLocalRepo.create()
     ])

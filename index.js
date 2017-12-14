@@ -1,4 +1,5 @@
 const express = require('express')
+const crypto = require('crypto')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
 const debug = require('debug')('pr-apps:web')
@@ -10,38 +11,74 @@ const FlynnService = require('./lib/flynnService')
 function handleErrors (fn) {
   return function (req, res, next) {
     return Promise.resolve(fn(req, res)).then(() => {
-      next(req, res)
+      next()
     }).catch(e => {
       console.error(e.stack)
-      next(req, res, e)
+      next(e)
     })
   }
 }
 
-module.exports = function (prApps) {
+function verifySignature (secret) {
+  return function (req, res, next) {
+    const shasum = crypto.createHmac('sha1', secret)
+      .update(JSON.stringify(req.body))
+
+    const signature = Buffer.from('sha1=' + shasum.digest('hex'))
+    if (crypto.timingSafeEqual(signature, Buffer.from(req.get('X-Hub-Signature')))) {
+      next()
+    } else {
+      res.status(500).send('Github webhook signature is incorrect')
+    }
+  }
+}
+
+function setContext (req, res, next) {
+  req.context = {
+    eventType: req.get('X-GitHub-Event')
+  }
+  next()
+}
+
+function skipIrrelevantHooks (req, res, next) {
+  const eventType = req.context.eventType
+
+  if (eventType === 'pull_request') {
+    debug('Processing %s event', eventType)
+    next()
+  } else {
+    debug('Skipping %s event', eventType)
+    res.status(200).end()
+  }
+}
+
+module.exports = function ({prApps, webhookSecret}) {
   const app = express()
 
-  app.use(bodyParser.json())
   if (debug.enabled) {
     app.use(morgan('dev'))
   }
+  app.use(bodyParser.json())
 
-  app.post('/webhook', handleErrors(async (req, res) => {
-    const eventType = req.get('X-GitHub-Event')
-    debug('eventType %s', eventType)
+  app.post('/webhook',
+    setContext,
+    skipIrrelevantHooks,
+    verifySignature(webhookSecret),
+    handleErrors(async (req, res) => {
+      const payload = req.body
 
-    if (eventType === 'pull_request') {
-      const {
-        head: {
-          ref: branch
-        },
-        number: prNumber
-      } = req.body.pull_request
+      if (req.context.eventType === 'pull_request') {
+        const {
+          head: {
+            ref: branch
+          },
+          number: prNumber
+        } = payload.pull_request
 
-      await prApps.deployPullRequest({branch, prNumber})
-    }
-    res.status(200).end()
-  }))
+        await prApps.deployPullRequest({branch, prNumber})
+      }
+      res.status(200).end()
+    }))
 
   return app
 }
@@ -65,5 +102,8 @@ if (!module.parent) {
     scmProject,
     flynnService
   })
-  module.exports(prApps).listen(process.env.PORT || 9891)
+  const port = process.env.PORT
+  module.exports({prApps, webhookSecret: process.env.WEBHOOK_SECRET}).listen(port, function () {
+    console.info('pr-apps is listening on %s', port)
+  })
 }

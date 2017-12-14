@@ -6,7 +6,6 @@ const tmp = require('tmp')
 module.exports = class GitRepo {
   constructor ({repoUrl}) {
     this.repoUrl = repoUrl
-    this.featureBranch = 'Feature1'
   }
 
   async create () {
@@ -21,12 +20,11 @@ module.exports = class GitRepo {
     return this.tmpDir.removeCallback()
   }
 
-  async pushBranch () {
-    await this.git.checkoutLocalBranch(this.featureBranch)
-    fs.writeFileSync(path.join(this.tmpDir.name, 'index.js'), 'console.log(1)')
+  async pushBranch (branch) {
+    await this.git.checkoutLocalBranch(branch)
+    fs.writeFileSync(path.join(this.tmpDir.name, 'index.html'), branch)
     await this.git.add('.')
     await this.git.commit('add index.js')
-    await this.git.push(['--set-upstream', 'origin', this.featureBranch])
-    return this.featureBranch
+    await this.git.push(['--set-upstream', 'origin', branch])
   }
 }

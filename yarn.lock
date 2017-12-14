@@ -244,11 +244,17 @@ base-64@0.1.0:
   version "0.1.0"
   resolved "https://registry.yarnpkg.com/base-64/-/base-64-0.1.0.tgz#780a99c84e7d600260361511c4877613bf24f6bb"
 
-basic-auth@~2.0.0:
+basic-auth@^2.0.0, basic-auth@~2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/basic-auth/-/basic-auth-2.0.0.tgz#015db3f353e02e56377755f962742e8981e7bbba"
   dependencies:
     safe-buffer "5.1.1"
+
+basicauth-middleware@^3.0.0:
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/basicauth-middleware/-/basicauth-middleware-3.0.0.tgz#67316ff20876c3295040ca64c3d7cf8287d692e2"
+  dependencies:
+    basic-auth "^2.0.0"
 
 bcrypt-pbkdf@^1.0.0:
   version "1.0.1"
@@ -1121,6 +1127,10 @@ expand-range@^1.8.1:
   dependencies:
     fill-range "^2.1.0"
 
+express-subdomain@^1.0.5:
+  version "1.0.5"
+  resolved "https://registry.yarnpkg.com/express-subdomain/-/express-subdomain-1.0.5.tgz#990ef97940b7f4c2823d9593648b79be858a638b"
+
 express@^4.16.2:
   version "4.16.2"
   resolved "https://registry.yarnpkg.com/express/-/express-4.16.2.tgz#e35c6dfe2d64b7dca0a5cd4f21781be3299e076c"
@@ -1407,6 +1417,17 @@ getpass@^0.1.1:
 gherkin@^5.0.0:
   version "5.0.0"
   resolved "https://registry.yarnpkg.com/gherkin/-/gherkin-5.0.0.tgz#96def41198ec3908258b511af74f655a2764d2a1"
+
+git-http-backend@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/git-http-backend/-/git-http-backend-1.0.2.tgz#dc01e4284209353064453a70f92f89de0834eb10"
+  dependencies:
+    git-side-band-message "~0.0.3"
+    inherits "~2.0.1"
+
+git-side-band-message@~0.0.3:
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/git-side-band-message/-/git-side-band-message-0.0.3.tgz#b8a5348c2dcbf1949fd295c506014e26c3f26a46"
 
 github@^12.1.0:
   version "12.1.0"

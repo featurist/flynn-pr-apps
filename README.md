@@ -1,6 +1,6 @@
 # PR apps
 
-Automatically deploy pull requests into flynn cluster. AKA Heroku review apps DIY.
+Automatically deploy pull requests into flynn cluster. Heroku Review Apps DIY.
 
 ## Usage
 
@@ -8,18 +8,32 @@ Automatically deploy pull requests into flynn cluster. AKA Heroku review apps DI
 git clone https://github.com/featurist/pr-apps
 cd pr-apps
 flynn create pr-apps
-flynn env set GH_REPO
-flynn env set GH_USER_TOKEN
-flynn env set APP_DEPLOY_SCRIPT=tools/deploy-pr-app
+flynn env set GH_REPO=https://github.com/some-org/some-repo.git
+flynn env set GH_USER_TOKEN=YOUR_TOKEN
 flynn env set FLYNN_CLUSTER_DOMAIN=prs.example.com
+flynn env set FLYNN_AUTH_KEY=$(flynn -a controller env get AUTH_KEY)
 git push flynn master
 ```
 
-The actual deployment needs to be scripted by user. pr-apps is simply going to run that script (specified by `FLYNN_CLUSTER_DOMAIN`) passing an app name - `pr-${PR_NUMBER}` - as an argument.
+Once up, pr-apps will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app specified in `GH_REPO` in your flynn cluster. The deployed app url will be shown on github pull request page.
 
-The script should deploy the app here `https://pr-${PR_NUMBER}.${FLYNN_CLUSTER_DOMAIN}` because that link is going to be posted to github as deployment link.
+TODO describe worker that destroys stale prs when (and if) there is such thing
 
-This is likely to change in future as we're perfectly able to deploy based on some kind of a json manifest.
+TODO pr-apps.yaml
+
+```
+env:
+  FOO: bar
+  DEBUG: true
+resources:
+  - redis
+routes:
+  api-web:
+    subdomain: api
+scale:
+  web: 2
+  api-web: 1
+```
 
 ## Development
 
@@ -49,5 +63,5 @@ Run with everything real (git, github). Needs some extra environment:
 `TEST_GH_USER_TOKEN` API token of the account that can has access (create webhooks, pull code) to the above repo.
 
 ```
-yarn test-real
+DEBUG=pr-apps* yarn test-real
 ```

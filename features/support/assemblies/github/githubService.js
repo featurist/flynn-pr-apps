@@ -97,6 +97,7 @@ class CurrentPrNotifier {
   constructor ({prNotifier, pr}) {
     this.prNotifier = prNotifier
     this.pr = pr
+    this.prNumber = pr.number
   }
 
   async waitForDeployStarted () {

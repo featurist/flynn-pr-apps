@@ -16,12 +16,17 @@
   },
   "scripts": {
     "start": "nf start",
-    "test": "DEBUG=pr-apps cucumberjs --backtrace",
-    "test-real": "CUCUMBER_ASSEMBLY=github yarn test"
+    "test": "cucumberjs --backtrace",
+    "test-debug": "node --inspect-brk ./node_modules/.bin/cucumber.js",
+    "test-real": "CUCUMBER_ASSEMBLY=github yarn test",
+    "test-real-debug": "CUCUMBER_ASSEMBLY=github yarn test-debug"
   },
   "devDependencies": {
+    "basicauth-middleware": "^3.0.0",
     "chai": "^4.1.2",
     "cucumber": "^3.1.0",
+    "express-subdomain": "^1.0.5",
+    "git-http-backend": "^1.0.2",
     "mocha": "^4.0.1",
     "ngrok": "^2.2.24",
     "nodemon": "^1.12.1",

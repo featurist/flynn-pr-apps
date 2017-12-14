@@ -1,11 +1,11 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
-const debug = require('debug')('pr-apps')
+const debug = require('debug')('pr-apps:web')
 const GithubApiAdapter = require('./lib/githubApiAdapter')
 const PrApps = require('./lib/prApps')
 const GitProject = require('./lib/gitProject')
-const DeployScript = require('./lib/deployScript')
+const FlynnService = require('./lib/flynnService')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -31,8 +31,14 @@ module.exports = function (prApps) {
     debug('eventType %s', eventType)
 
     if (eventType === 'pull_request') {
-      const branch = req.body.pull_request.head.ref
-      await prApps.deployPullRequest(branch)
+      const {
+        head: {
+          ref: branch
+        },
+        number: prNumber
+      } = req.body.pull_request
+
+      await prApps.deployPullRequest({branch, prNumber})
     }
     res.status(200).end()
   }))
@@ -45,12 +51,19 @@ if (!module.parent) {
     token: process.env.GH_USER_TOKEN,
     repo: process.env.GH_REPO
   })
-  const scmProject = new GitProject()
-  const deployScript = new DeployScript()
+  const scmProject = new GitProject({
+    token: process.env.GH_USER_TOKEN,
+    repo: process.env.GH_REPO
+  })
+  const flynnService = new FlynnService({
+    authKey: process.env.FLYNN_AUTH_KEY,
+    clusterDomain: process.env.FLYNN_CLUSTER_DOMAIN
+  })
+
   const prApps = new PrApps({
     codeHostingServiceApi,
     scmProject,
-    deployScript
+    flynnService
   })
   module.exports(prApps).listen(process.env.PORT || 9891)
 }

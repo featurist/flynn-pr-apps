@@ -1,19 +1,24 @@
 const {promisify} = require('util')
 const ngrok = require('ngrok')
+const {expect} = require('chai')
 const PrApps = require('../../../../lib/prApps')
 const GithubApiAdapter = require('../../../../lib/githubApiAdapter')
 const GitProject = require('../../../../lib/gitProject')
-const DeployScript = require('../../../../lib/deployScript')
+const FlynnService = require('../../../../lib/flynnService')
 const createPrAppsApp = require('../../../..')
 const createPrNotifierApp = require('./prNotifierApp')
 const GithubService = require('./githubService')
 const GitRepo = require('./gitRepo')
+const HeadlessBrowser = require('./headlessBrowser')
+const FakeFlynnApi = require('./fakeFlynnApi')
+const getRandomPort = require('./getRandomPort')
 
 const testGhRepoUrl = `https://${process.env.TEST_GH_USER_TOKEN}@github.com/${process.env.TEST_GH_REPO}.git`
 
 module.exports = class GithubAssembly {
   async setup () {
-    this.prAppsHost = await promisify(ngrok.connect)(9874)
+    this.port = await getRandomPort()
+    this.prAppsHost = await promisify(ngrok.connect)(this.port)
   }
 
   async start () {
@@ -22,21 +27,36 @@ module.exports = class GithubAssembly {
       token: process.env.TEST_GH_USER_TOKEN
     })
     const scmProject = new GitProject({
-      remoteUrl: testGhRepoUrl
+      repo: process.env.TEST_GH_REPO,
+      token: process.env.TEST_GH_USER_TOKEN
     })
-    const deployScript = new DeployScript()
+
+    // so that http client can request `https://` urls served by fake flynn api
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+
+    this.fakeFlynnApi = new FakeFlynnApi({
+      authKey: 'flynnApiAuthKey'
+    })
+    await this.fakeFlynnApi.start()
+
+    this.clusterDomain = `prs.localtest.me:${this.fakeFlynnApi.port}`
+    const flynnService = new FlynnService({
+      clusterDomain: this.clusterDomain,
+      authKey: 'flynnApiAuthKey'
+    })
+
     const prApps = new PrApps({
       codeHostingServiceApi,
       scmProject,
-      deployScript
+      flynnService
     })
     this.prAppsApp = createPrAppsApp(prApps)
     this.prNotifierApp = createPrNotifierApp()
     this.prAppsApp.use(this.prNotifierApp)
 
-    this.prAppsServer = this.prAppsApp.listen(9874)
+    this.prAppsServer = this.prAppsApp.listen(this.port)
 
-    this.repo = new GitRepo({repoUrl: testGhRepoUrl})
+    this.userLocalRepo = new GitRepo({repoUrl: testGhRepoUrl})
     this.codeHostingService = new GithubService({
       repo: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN,
@@ -52,13 +72,14 @@ module.exports = class GithubAssembly {
     await Promise.all([
       this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['push', 'pull_request']),
       this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments_test`, ['deployment_status']),
-      this.repo.create()
+      this.userLocalRepo.create()
     ])
   }
 
   async stop () {
     await Promise.all([
-      this.repo.destroy(),
+      this.userLocalRepo.destroy(),
+      this.fakeFlynnApi.stop(),
       this.prAppsServer
         ? new Promise(resolve => this.prAppsServer.close(resolve))
         : Promise.resolve(),
@@ -70,16 +91,18 @@ module.exports = class GithubAssembly {
 
   createActor () {
     return new ApiActor({
-      repo: this.repo,
+      repo: this.userLocalRepo,
+      clusterDomain: this.clusterDomain,
       codeHostingService: this.codeHostingService
     })
   }
 }
 
 class ApiActor {
-  constructor ({repo, codeHostingService}) {
+  constructor ({repo, codeHostingService, clusterDomain}) {
     this.codeHostingService = codeHostingService
-    this.repo = repo
+    this.clusterDomain = clusterDomain
+    this.userLocalRepo = repo
   }
 
   async start () {}
@@ -87,7 +110,8 @@ class ApiActor {
   async stop () {}
 
   async pushBranch () {
-    this.currentBranch = await this.repo.pushBranch()
+    this.currentBranch = 'Feature1'
+    await this.userLocalRepo.pushBranch(this.currentBranch)
   }
 
   async openPullRequest () {
@@ -104,5 +128,15 @@ class ApiActor {
 
   async shouldSeeDeploySuccessful () {
     await this.currentPrNotifier.waitForDeploySuccessful()
+  }
+
+  async followDeployedAppLink () {
+    const browser = new HeadlessBrowser()
+    const deployedAppUrl = `https://pr-${this.currentPrNotifier.prNumber}.${this.clusterDomain}`
+    this.appIndexPageContent = await browser.visit(deployedAppUrl)
+  }
+
+  async shouldSeeDeployedApp () {
+    expect(this.appIndexPageContent).to.eq(this.currentBranch)
   }
 }

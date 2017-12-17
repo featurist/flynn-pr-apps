@@ -14,3 +14,8 @@ Feature: Deploy Github pull request
     Given Frank received a notification that his pr app deploy is complete
     When Frank follows the link in the notifiation
     Then Frank sees the deployed app
+
+  Scenario: User pushes changes to existing pull request
+    Given Frank has a pr app
+    When Frank pushes changes to the pr branch
+    Then Frank should see that deploy of a pr app has started

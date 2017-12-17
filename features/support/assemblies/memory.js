@@ -20,16 +20,22 @@ class MemoryActor {
   constructor ({prApps, codeHostingService}) {
     this.prApps = prApps
     this.codeHostingService = codeHostingService
+    this.currentBranch = 'Feature1'
+    this.prNumber = 23
   }
 
   async start () {}
   async stop () {}
 
   async pushBranch () {}
+  switchToBranchWithExistingPr () {}
 
   async openPullRequest () {
-    this.currentBranch = 'Feature1'
-    this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
+    this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch, this.prNumber)
+  }
+
+  async pushMoreChanges () {
+    this.currentPrNotifier = await this.codeHostingService.pushMoreChanges(this.currentBranch)
   }
 
   async shouldSeeDeployStarted () {
@@ -46,7 +52,7 @@ class MemoryActor {
 
   async followDeployedAppLink () {
     const deployedAppUrl = this.prApps.flynnService.lastDeployedAppUrl
-    expect(deployedAppUrl).to.eq(`https://pr-${this.currentPrNotifier.prNumber}.prs.example.com`)
+    expect(deployedAppUrl).to.eq(`https://pr-${this.prNumber}.prs.example.com`)
   }
 
   async shouldSeeDeployedApp () {}
@@ -57,18 +63,21 @@ class MemoryCodeHostingService {
     this.prApps = prApps
   }
 
-  async openPullRequest (branch) {
-    this.prNumber = 23
-    await this.prApps.deployPullRequest({branch, prNumber: this.prNumber})
-    return new PrNotifier(this.prApps.codeHostingServiceApi, branch, this.prNumber)
+  async openPullRequest (branch, prNumber) {
+    await this.prApps.deployPullRequest({branch, prNumber})
+    return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
+  }
+
+  async pushMoreChanges (branch) {
+    await this.prApps.deployUpdate({branch})
+    return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
   }
 }
 
 class PrNotifier {
-  constructor (codeHostingServiceApi, branch, prNumber) {
+  constructor (codeHostingServiceApi, branch) {
     this.codeHostingServiceApi = codeHostingServiceApi
     this.branch = branch
-    this.prNumber = prNumber
   }
 
   waitForDeployStarted () {

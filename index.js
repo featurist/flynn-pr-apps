@@ -48,7 +48,7 @@ function skipIrrelevantHooks (req, res, next) {
     next()
   } else {
     debug('Skipping %s event', eventType)
-    res.status(200).end()
+    res.status(202).send('Skipping %s event', eventType)
   }
 }
 
@@ -75,9 +75,9 @@ module.exports = function ({prApps, webhookSecret}) {
           number: prNumber
         } = payload.pull_request
 
+        res.status(200).send('Initiating deploy')
         await prApps.deployPullRequest({branch, prNumber})
       }
-      res.status(200).end()
     }))
 
   return app

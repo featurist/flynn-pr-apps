@@ -129,11 +129,11 @@ class MemoryCodeHostingServiceApi {
 }
 
 class ScmProjectMemory {
-  async clone () {
-    return {
+  clone (branch, fn) {
+    fn({
       push () {},
       remove () {}
-    }
+    })
   }
 }
 

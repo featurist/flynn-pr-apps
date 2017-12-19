@@ -20,7 +20,7 @@ git push flynn master
 
 ### Register github webhook
 
-For `GH_REPO` create a webhook for `pull_request` and `push` events and point it to `https://pr-apps.$FLYNN_CLUSTER_DOMAIN`.
+For `GH_REPO` create a webhook for `pull_request` events and point it to `https://pr-apps.$FLYNN_CLUSTER_DOMAIN`.
 
 Set content type to `application/json` and `Disable SSL verification`. More about webhooks [here](https://developer.github.com/webhooks/securing/).
 

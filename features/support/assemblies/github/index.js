@@ -50,9 +50,9 @@ module.exports = class GithubAssembly {
       scmProject,
       flynnService
     })
-    const webhookSecret = 'webhook secret'
+    this.webhookSecret = 'webhook secret'
     this.prAppsApp = createPrAppsApp({
-      webhookSecret,
+      webhookSecret: this.webhookSecret,
       prApps
     })
     this.prNotifierApp = createPrNotifierApp()
@@ -69,15 +69,10 @@ module.exports = class GithubAssembly {
 
     await Promise.all([
       this.codeHostingService.deleteWebhooks(),
-      this.codeHostingService.closeAllPrs()
-    ])
-    await this.codeHostingService.deleteNonMasterBranches()
-
-    await Promise.all([
-      this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['push', 'pull_request'], webhookSecret),
-      this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments_test`, ['deployment_status']),
+      this.codeHostingService.closeAllPrs(),
       this.userLocalRepo.create()
     ])
+    await this.codeHostingService.deleteNonMasterBranches()
   }
 
   async stop () {
@@ -90,6 +85,13 @@ module.exports = class GithubAssembly {
       this.prNotifierServer
         ? new Promise(resolve => this.prNotifierServer.close(resolve))
         : Promise.resolve()
+    ])
+  }
+
+  createGithubWebhooks () {
+    return Promise.all([
+      this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['pull_request'], this.webhookSecret),
+      this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments_test`, ['deployment_status'])
     ])
   }
 
@@ -107,6 +109,7 @@ class ApiActor {
     this.codeHostingService = codeHostingService
     this.clusterDomain = clusterDomain
     this.userLocalRepo = repo
+    this.currentBranch = 'Feature1'
   }
 
   async start () {}
@@ -114,12 +117,15 @@ class ApiActor {
   async stop () {}
 
   async pushBranch () {
-    this.currentBranch = 'Feature1'
-    await this.userLocalRepo.pushBranch(this.currentBranch)
+    await this.userLocalRepo.pushBranch(this.currentBranch, '<h1>Hello World!</h1>')
   }
 
   async openPullRequest () {
     this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
+  }
+
+  async pushMoreChanges () {
+    await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
   }
 
   async shouldSeeDeployStarted () {
@@ -141,6 +147,6 @@ class ApiActor {
   }
 
   async shouldSeeDeployedApp () {
-    expect(this.appIndexPageContent).to.eq(this.currentBranch)
+    expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1>')
   }
 }

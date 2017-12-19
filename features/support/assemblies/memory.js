@@ -14,6 +14,8 @@ module.exports = class MemoryAssembly {
     const codeHostingService = new MemoryCodeHostingService({prApps})
     return new MemoryActor({prApps, codeHostingService})
   }
+
+  createGithubWebhooks () {}
 }
 
 class MemoryActor {

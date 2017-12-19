@@ -3,7 +3,7 @@
     const { Before, After, defineSupportCode } = require('cucumber')
 
     const assemblyName = process.env.CUCUMBER_ASSEMBLY || 'memory'
-    console.log(`\n🥒 ${assemblyName}\n`)
+    console.log(`\nAssembly: ${assemblyName}\n`)
     const AssemblyModule = require(`./assemblies/${assemblyName}`)
     const assembly = new AssemblyModule()
 

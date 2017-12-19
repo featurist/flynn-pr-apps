@@ -48,7 +48,7 @@ function skipIrrelevantHooks (req, res, next) {
     next()
   } else {
     debug('Skipping %s event', eventType)
-    res.status(202).send('Skipping %s event', eventType)
+    res.status(202).send(`Skipping ${eventType} event`)
   }
 }
 
@@ -65,18 +65,29 @@ module.exports = function ({prApps, webhookSecret}) {
     skipIrrelevantHooks,
     verifySignature(webhookSecret),
     handleErrors(async (req, res) => {
-      const payload = req.body
-
-      if (req.context.eventType === 'pull_request') {
-        const {
+      const {
+        action,
+        number,
+        pull_request: {
           head: {
             ref: branch
-          },
-          number: prNumber
-        } = payload.pull_request
+          }
+        }
+      } = req.body
 
-        res.status(200).send('Initiating deploy')
-        await prApps.deployPullRequest({branch, prNumber})
+      debug('pull_request action', action)
+
+      if (action === 'opened') {
+        debug('Initiating new deploy')
+        res.status(200).send('Initiating new deploy')
+        await prApps.deployPullRequest({branch, prNumber: number})
+      } else if (action === 'synchronize') {
+        debug('Initiating deploy update')
+        res.status(200).send('Initiating deploy update')
+        await prApps.deployUpdate({branch})
+      } else {
+        debug(`Skipping pull_request action ${action}`)
+        res.status(202).send(`Skipping pull_request action ${action}`)
       }
     }))
 

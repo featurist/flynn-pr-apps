@@ -1,6 +1,7 @@
 const { Given, When, Then } = require('cucumber')
 
 Given('{actor} pushed a branch to a code hosting service', async function (actor) {
+  await this.assembly.createGithubWebhooks()
   await actor.pushBranch()
 })
 
@@ -13,6 +14,7 @@ Then('{actor} should see that deploy of a pr app has started', async function (a
 })
 
 Given('the deploy of {actor}\'s pr app has started', async function (actor) {
+  await this.assembly.createGithubWebhooks()
   await actor.pushBranch()
   await actor.openPullRequest()
   this.currentActor = actor
@@ -27,6 +29,7 @@ Then('{actor} sees that the deploy is complete', async function (actor) {
 })
 
 Given('{actor} received a notification that his pr app deploy is complete', async function (actor) {
+  await this.assembly.createGithubWebhooks()
   await actor.pushBranch()
   await actor.openPullRequest()
   await actor.shouldSeeDeploySuccessful()
@@ -41,7 +44,9 @@ Then('{actor} sees the deployed app', async function (actor) {
 })
 
 Given('{actor} has a pr app', async function (actor) {
-  await actor.switchToBranchWithExistingPr()
+  await actor.pushBranch()
+  await actor.openPullRequest()
+  await this.assembly.createGithubWebhooks()
 })
 
 When('{actor} pushes changes to the pr branch', async function (actor) {

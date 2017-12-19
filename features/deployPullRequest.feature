@@ -10,10 +10,10 @@ Feature: Deploy Github pull request
     When the deploy is complete
     Then Frank sees that the deploy is complete
 
-  Scenario: Pr author visits new deployed app
+  Scenario: Pr author visits new app
     Given Frank received a notification that his pr app deploy is complete
     When Frank follows the link in the notifiation
-    Then Frank sees the deployed app
+    Then Frank sees the new app
 
   Scenario: User pushes changes to existing pull request
     Given Frank has a pr app
@@ -24,3 +24,8 @@ Feature: Deploy Github pull request
     Given the deploy of the update of Frank's pr app has started
     When the deploy is complete
     Then Frank sees that the deploy is complete
+
+  Scenario: Pr author visits updated app
+    Given Frank received a notification that his app is updated
+    When Frank follows the link in the notifiation
+    Then Frank sees the updated app

@@ -146,7 +146,11 @@ class ApiActor {
     this.appIndexPageContent = await browser.visit(deployedAppUrl)
   }
 
-  async shouldSeeDeployedApp () {
+  async shouldSeeNewApp () {
     expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1>')
+  }
+
+  async shouldSeeUpdatedApp () {
+    expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1><p>This is Pr Apps</p>')
   }
 }

@@ -39,8 +39,8 @@ When('{actor} follows the link in the notifiation', async function (actor) {
   await actor.followDeployedAppLink()
 })
 
-Then('{actor} sees the deployed app', async function (actor) {
-  await actor.shouldSeeDeployedApp()
+Then('{actor} sees the new app', async function (actor) {
+  await actor.shouldSeeNewApp()
 })
 
 Given('{actor} has a pr app', async function (actor) {
@@ -62,4 +62,19 @@ Given('the deploy of the update of {actor}\'s pr app has started', async functio
   await actor.pushMoreChanges()
 
   this.currentActor = actor
+})
+
+Given('{actor} received a notification that his app is updated', async function (actor) {
+  await actor.pushBranch()
+  await actor.openPullRequest()
+  await this.assembly.flynnService.createApp(`pr-${actor.currentPrNotifier.prNumber}`)
+
+  await this.assembly.createGithubWebhooks()
+  await actor.pushMoreChanges()
+
+  await actor.shouldSeeDeploySuccessful()
+})
+
+Then('{actor} sees the updated app', async function (actor) {
+  await actor.shouldSeeUpdatedApp()
 })

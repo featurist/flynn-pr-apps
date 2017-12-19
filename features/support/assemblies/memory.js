@@ -41,7 +41,7 @@ class MemoryActor {
   }
 
   async pushMoreChanges () {
-    this.currentPrNotifier = await this.codeHostingService.pushMoreChanges(this.currentBranch)
+    this.currentPrNotifier = await this.codeHostingService.pushMoreChanges(this.currentBranch, this.prNumber)
   }
 
   async shouldSeeDeployStarted () {
@@ -61,7 +61,8 @@ class MemoryActor {
     expect(deployedAppUrl).to.eq(`https://pr-${this.prNumber}.prs.example.com`)
   }
 
-  async shouldSeeDeployedApp () {}
+  async shouldSeeNewApp () {}
+  async shouldSeeUpdatedApp () {}
 }
 
 class MemoryCodeHostingService {
@@ -74,8 +75,8 @@ class MemoryCodeHostingService {
     return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
   }
 
-  async pushMoreChanges (branch) {
-    await this.prApps.deployUpdate({branch})
+  async pushMoreChanges (branch, prNumber) {
+    await this.prApps.deployUpdate({branch, prNumber})
     return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
   }
 }
@@ -150,6 +151,7 @@ class FlynnServiceMemory {
   }
 
   getApp (appName) {
+    this.lastDeployedAppUrl = `https://${appName}.${this.clusterUrl}`
     return {
       webUrl: `https://${appName}.${this.clusterUrl}`
     }

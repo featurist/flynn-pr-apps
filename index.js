@@ -84,7 +84,7 @@ module.exports = function ({prApps, webhookSecret}) {
       } else if (action === 'synchronize') {
         debug('Initiating deploy update')
         res.status(200).send('Initiating deploy update')
-        await prApps.deployUpdate({branch})
+        await prApps.deployUpdate({branch, prNumber: number})
       } else {
         debug(`Skipping pull_request action ${action}`)
         res.status(202).send(`Skipping pull_request action ${action}`)

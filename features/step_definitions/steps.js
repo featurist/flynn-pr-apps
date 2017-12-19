@@ -13,7 +13,7 @@ Then('{actor} should see that deploy of a pr app has started', async function (a
   await actor.shouldSeeDeployStarted()
 })
 
-Given('the deploy of {actor}\'s pr app has started', async function (actor) {
+Given('the deploy of {actor}\'s new pr app has started', async function (actor) {
   await this.assembly.createGithubWebhooks()
   await actor.pushBranch()
   await actor.openPullRequest()
@@ -51,4 +51,15 @@ Given('{actor} has a pr app', async function (actor) {
 
 When('{actor} pushes changes to the pr branch', async function (actor) {
   await actor.pushMoreChanges()
+})
+
+Given('the deploy of the update of {actor}\'s pr app has started', async function (actor) {
+  await actor.pushBranch()
+  await actor.openPullRequest()
+  await this.assembly.flynnService.createApp(`pr-${actor.currentPrNotifier.prNumber}`)
+
+  await this.assembly.createGithubWebhooks()
+  await actor.pushMoreChanges()
+
+  this.currentActor = actor
 })

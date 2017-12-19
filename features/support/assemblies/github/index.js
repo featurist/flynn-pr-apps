@@ -40,7 +40,7 @@ module.exports = class GithubAssembly {
     await this.fakeFlynnApi.start()
 
     this.clusterDomain = `prs.localtest.me:${this.fakeFlynnApi.port}`
-    const flynnService = new FlynnService({
+    this.flynnService = new FlynnService({
       clusterDomain: this.clusterDomain,
       authKey: 'flynnApiAuthKey'
     })
@@ -48,7 +48,7 @@ module.exports = class GithubAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi,
       scmProject,
-      flynnService
+      flynnService: this.flynnService
     })
     this.webhookSecret = 'webhook secret'
     this.prAppsApp = createPrAppsApp({

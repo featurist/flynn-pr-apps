@@ -6,16 +6,20 @@ module.exports = class MemoryAssembly {
   async start () {}
   async stop () {}
   createActor () {
+    this.flynnService = new FlynnServiceMemory('prs.example.com')
+    this.codeHostingServiceApi = new MemoryCodeHostingServiceApi()
     const prApps = new PrApps({
-      codeHostingServiceApi: new MemoryCodeHostingServiceApi(),
+      codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject: new ScmProjectMemory(),
-      flynnService: new FlynnServiceMemory('prs.example.com')
+      flynnService: this.flynnService
     })
     const codeHostingService = new MemoryCodeHostingService({prApps})
     return new MemoryActor({prApps, codeHostingService})
   }
 
-  createGithubWebhooks () {}
+  createGithubWebhooks () {
+    this.codeHostingServiceApi.recordRequests = true
+  }
 }
 
 class MemoryActor {
@@ -114,11 +118,13 @@ class MemoryCodeHostingServiceApi {
   }
 
   async updateDeploymentStatus (deployment, status, deployedAppUrl) {
-    this.updateDeployStatusRequests.push({
-      branch: deployment.branch,
-      status,
-      deployedAppUrl
-    })
+    if (this.recordRequests) {
+      this.updateDeployStatusRequests.push({
+        branch: deployment.branch,
+        status,
+        deployedAppUrl
+      })
+    }
   }
 }
 
@@ -136,10 +142,16 @@ class FlynnServiceMemory {
     this.clusterUrl = clusterUrl
   }
 
-  async createApp (appName) {
+  createApp (appName) {
     this.lastDeployedAppUrl = `https://${appName}.${this.clusterUrl}`
     return {
       webUrl: this.lastDeployedAppUrl
+    }
+  }
+
+  getApp (appName) {
+    return {
+      webUrl: `https://${appName}.${this.clusterUrl}`
     }
   }
 }

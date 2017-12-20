@@ -1,5 +1,6 @@
 const {promisify} = require('util')
 const ngrok = require('ngrok')
+const retry = require('trytryagain')
 const {expect} = require('chai')
 const PrApps = require('../../../../lib/prApps')
 const GithubApiAdapter = require('../../../../lib/githubApiAdapter')
@@ -98,16 +99,16 @@ module.exports = class GithubAssembly {
   createActor () {
     return new ApiActor({
       repo: this.userLocalRepo,
-      clusterDomain: this.clusterDomain,
+      flynnService: this.flynnService,
       codeHostingService: this.codeHostingService
     })
   }
 }
 
 class ApiActor {
-  constructor ({repo, codeHostingService, clusterDomain}) {
+  constructor ({repo, codeHostingService, flynnService}) {
     this.codeHostingService = codeHostingService
-    this.clusterDomain = clusterDomain
+    this.flynnService = flynnService
     this.userLocalRepo = repo
     this.currentBranch = 'Feature1'
   }
@@ -115,6 +116,14 @@ class ApiActor {
   async start () {}
 
   async stop () {}
+
+  async withExistingPrApp () {
+    await this.pushBranch()
+    await this.openPullRequest()
+    await this.createPrApp()
+    await this.followDeployedAppLink()
+    await this.shouldSeeNewApp()
+  }
 
   async pushBranch () {
     await this.userLocalRepo.pushBranch(this.currentBranch, '<h1>Hello World!</h1>')
@@ -124,8 +133,17 @@ class ApiActor {
     this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
   }
 
+  async createPrApp () {
+    const {gitUrl} = await this.flynnService.createApp(`pr-${this.currentPrNotifier.prNumber}`)
+    await this.userLocalRepo.pushCurrentBranchToFlynn(gitUrl)
+  }
+
   async pushMoreChanges () {
     await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
+  }
+
+  async closePullRequest () {
+    await this.codeHostingService.closePullRequest(this.currentPrNotifier.prNumber)
   }
 
   async shouldSeeDeployStarted () {
@@ -142,7 +160,7 @@ class ApiActor {
 
   async followDeployedAppLink () {
     const browser = new HeadlessBrowser()
-    const deployedAppUrl = `https://pr-${this.currentPrNotifier.prNumber}.${this.clusterDomain}`
+    const deployedAppUrl = `https://pr-${this.currentPrNotifier.prNumber}.${this.flynnService.clusterDomain}`
     this.appIndexPageContent = await browser.visit(deployedAppUrl)
   }
 
@@ -152,5 +170,12 @@ class ApiActor {
 
   async shouldSeeUpdatedApp () {
     expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1><p>This is Pr Apps</p>')
+  }
+
+  async shouldNotSeeApp () {
+    await retry(async () => {
+      await this.followDeployedAppLink()
+      expect(this.appIndexPageContent).to.eq('Pr App Not Found')
+    }, {timeout: 10000, interval: 500})
   }
 }

@@ -14,7 +14,7 @@ module.exports = class MemoryAssembly {
       flynnService: this.flynnService
     })
     const codeHostingService = new MemoryCodeHostingService({prApps})
-    return new MemoryActor({prApps, codeHostingService})
+    return new MemoryActor({prApps, codeHostingService, flynnService: this.flynnService})
   }
 
   createGithubWebhooks () {
@@ -23,8 +23,9 @@ module.exports = class MemoryAssembly {
 }
 
 class MemoryActor {
-  constructor ({prApps, codeHostingService}) {
+  constructor ({prApps, codeHostingService, flynnService}) {
     this.prApps = prApps
+    this.flynnService = flynnService
     this.codeHostingService = codeHostingService
     this.currentBranch = 'Feature1'
     this.prNumber = 23
@@ -34,7 +35,7 @@ class MemoryActor {
   async stop () {}
 
   async pushBranch () {}
-  switchToBranchWithExistingPr () {}
+  withExistingPrApp () {}
 
   async openPullRequest () {
     this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch, this.prNumber)
@@ -42,6 +43,10 @@ class MemoryActor {
 
   async pushMoreChanges () {
     this.currentPrNotifier = await this.codeHostingService.pushMoreChanges(this.currentBranch, this.prNumber)
+  }
+
+  async closePullRequest () {
+    await this.codeHostingService.closePullRequest(this.prNumber)
   }
 
   async shouldSeeDeployStarted () {
@@ -57,12 +62,15 @@ class MemoryActor {
   }
 
   async followDeployedAppLink () {
-    const deployedAppUrl = this.prApps.flynnService.lastDeployedAppUrl
+    const deployedAppUrl = this.flynnService.lastDeployedAppUrl
     expect(deployedAppUrl).to.eq(`https://pr-${this.prNumber}.prs.example.com`)
   }
 
-  async shouldSeeNewApp () {}
-  async shouldSeeUpdatedApp () {}
+  shouldSeeNewApp () {}
+  shouldSeeUpdatedApp () {}
+  shouldNotSeeApp () {
+    expect(this.flynnService.destroyPrAppRequests).to.eql([`pr-${this.prNumber}`])
+  }
 }
 
 class MemoryCodeHostingService {
@@ -78,6 +86,10 @@ class MemoryCodeHostingService {
   async pushMoreChanges (branch, prNumber) {
     await this.prApps.deployUpdate({branch, prNumber})
     return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
+  }
+
+  async closePullRequest (prNumber) {
+    await this.prApps.destroyPrApp(prNumber)
   }
 }
 
@@ -141,6 +153,7 @@ class ScmProjectMemory {
 class FlynnServiceMemory {
   constructor (clusterUrl) {
     this.clusterUrl = clusterUrl
+    this.destroyPrAppRequests = []
   }
 
   createApp (appName) {
@@ -148,6 +161,10 @@ class FlynnServiceMemory {
     return {
       webUrl: this.lastDeployedAppUrl
     }
+  }
+
+  destroyApp (appName) {
+    this.destroyPrAppRequests.push(appName)
   }
 
   getApp (appName) {

@@ -11,6 +11,7 @@ module.exports = class GitRepo {
   async create () {
     this.tmpDir = tmp.dirSync({unsafeCleanup: true})
     this.git = simpleGit(this.tmpDir.name)
+      .env('GIT_SSL_NO_VERIFY', true)
     await this.git.init()
     await this.git.addRemote('origin', this.repoUrl)
     await this.git.pull('origin', 'master')
@@ -39,5 +40,10 @@ module.exports = class GitRepo {
       await this.git.commit('add index.js')
       await this.git.push(['--set-upstream', 'origin', branch])
     }
+  }
+
+  async pushCurrentBranchToFlynn (repoUrl) {
+    await this.git.addRemote('flynn', repoUrl)
+    await this.git.push('flynn', `${this.currentBranch}:master`)
   }
 }

@@ -15,6 +15,7 @@ const getRandomPort = require('./getRandomPort')
 module.exports = class FakeFlynnApi {
   constructor ({authKey}) {
     this.authKey = authKey
+    this.apps = {}
   }
 
   async start () {
@@ -39,12 +40,40 @@ module.exports = class FakeFlynnApi {
     flynnController.use(bodyParser.json())
     flynnController.use(basicAuth)
 
+    let appId = 1
     flynnController.post('/apps', (req, res) => {
       this._createAppRepo(req.body.name).then(() => {
+        debug('Creating app %s', req.body.name)
+        this.apps[appId++] = req.body.name
         res.status(201).end()
       }).catch(e => {
-        res.status(500).send(e)
+        console.error(e.stack)
+        res.status(500).end()
       })
+    })
+
+    flynnController.get('/apps', (req, res) => {
+      const apps = Object.entries(this.apps).map(([key, value]) => {
+        return {
+          id: key,
+          name: value
+        }
+      })
+      res.send(apps)
+    })
+
+    flynnController.delete('/apps/:appId', async (req, res) => {
+      try {
+        const appName = this.apps[req.params.appId]
+        debug('Destroying app %s', appName)
+        delete this.apps[req.params.appId]
+        this._destroyAppRepo(appName)
+        this._removeAppWebLocation(appName)
+        res.status(200).end()
+      } catch (e) {
+        console.error(e.stack)
+        res.status(500).end()
+      }
     })
 
     const flynnGitReceive = createFlynnGitReceiveApp({
@@ -57,7 +86,12 @@ module.exports = class FakeFlynnApi {
 
     deployedApps.get('/', (req, res) => {
       const appName = req.subdomains[1]
-      res.sendFile(`${this.appsDir.name}/${appName}/index.html`)
+      const appIndex = `${this.appsDir.name}/${appName}/index.html`
+      if (fs.existsSync(appIndex)) {
+        res.sendFile(appIndex)
+      } else {
+        res.send('Pr App Not Found')
+      }
     })
 
     app.use(subdomain('controller.prs', flynnController))
@@ -96,5 +130,23 @@ module.exports = class FakeFlynnApi {
       `git --work-tree=${appDir} --git-dir=${this.reposDir.name}/${repo} checkout -f`
 
     execSync(postReceiveHook, {stdio: 'inherit'})
+  }
+
+  _destroyAppRepo (appName) {
+    const dir = `${this.reposDir.name}/${appName}.git`
+    debug('Destroying app repo %s', dir)
+    if (!fs.existsSync(dir)) {
+      throw new Error(`Attempting to destroy non-existing repo ${dir}`)
+    }
+    fs.removeSync(dir)
+  }
+
+  _removeAppWebLocation (appName) {
+    const dir = `${this.appsDir.name}/${appName}`
+    debug('Removing web location %s', dir)
+    if (!fs.existsSync(dir)) {
+      throw new Error(`Attempting to remove non-existing web location ${dir}`)
+    }
+    fs.removeSync(dir)
   }
 }

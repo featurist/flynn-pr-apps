@@ -85,6 +85,10 @@ module.exports = function ({prApps, webhookSecret}) {
         debug('Initiating deploy update')
         res.status(200).send('Initiating deploy update')
         await prApps.deployUpdate({branch, prNumber: number})
+      } else if (action === 'closed') {
+        debug('Initiating app destroy')
+        res.status(200).send('Initiating app destroy')
+        await prApps.destroyPrApp(number)
       } else {
         debug(`Skipping pull_request action ${action}`)
         res.status(202).send(`Skipping pull_request action ${action}`)

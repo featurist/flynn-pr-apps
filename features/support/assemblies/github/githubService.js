@@ -55,14 +55,7 @@ module.exports = class GithubService {
       repo: this.repo
     })
     return Promise.all(
-      prs.map(pr => {
-        return this.ghApi.pullRequests.update({
-          owner: this.owner,
-          repo: this.repo,
-          number: pr.number,
-          state: 'closed'
-        })
-      })
+      prs.map(pr => this.closePullRequest(pr.number))
     )
   }
 
@@ -92,6 +85,15 @@ module.exports = class GithubService {
     })
     return new CurrentPrNotifier({prNotifier: this.prNotifier, pr})
   }
+
+  async closePullRequest (prNumber) {
+    await this.ghApi.pullRequests.update({
+      owner: this.owner,
+      repo: this.repo,
+      number: prNumber,
+      state: 'closed'
+    })
+  }
 }
 
 class CurrentPrNotifier {
@@ -102,7 +104,7 @@ class CurrentPrNotifier {
   }
 
   async waitForDeployStarted () {
-    await retry(async () => {
+    await retry(() => {
       const currentDeploymentStatus = this.prNotifier.deploymentStatusEvents[0]
       expect(currentDeploymentStatus).to.eql({
         ref: this.pr.head.ref,

@@ -44,8 +44,7 @@ Then('{actor} sees the new app', async function (actor) {
 })
 
 Given('{actor} has a pr app', async function (actor) {
-  await actor.pushBranch()
-  await actor.openPullRequest()
+  await actor.withExistingPrApp()
   await this.assembly.createGithubWebhooks()
 })
 
@@ -54,27 +53,29 @@ When('{actor} pushes changes to the pr branch', async function (actor) {
 })
 
 Given('the deploy of the update of {actor}\'s pr app has started', async function (actor) {
-  await actor.pushBranch()
-  await actor.openPullRequest()
-  await this.assembly.flynnService.createApp(`pr-${actor.currentPrNotifier.prNumber}`)
-
+  await actor.withExistingPrApp()
   await this.assembly.createGithubWebhooks()
-  await actor.pushMoreChanges()
 
+  await actor.pushMoreChanges()
   this.currentActor = actor
 })
 
 Given('{actor} received a notification that his app is updated', async function (actor) {
-  await actor.pushBranch()
-  await actor.openPullRequest()
-  await this.assembly.flynnService.createApp(`pr-${actor.currentPrNotifier.prNumber}`)
-
+  await actor.withExistingPrApp()
   await this.assembly.createGithubWebhooks()
-  await actor.pushMoreChanges()
 
+  await actor.pushMoreChanges()
   await actor.shouldSeeDeploySuccessful()
 })
 
 Then('{actor} sees the updated app', async function (actor) {
   await actor.shouldSeeUpdatedApp()
+})
+
+When('{actor} closes that app\'s pr', async function (actor) {
+  await actor.closePullRequest()
+})
+
+Then('{actor} can no longer access the app', async function (actor) {
+  await actor.shouldNotSeeApp()
 })

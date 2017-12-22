@@ -36,9 +36,14 @@ class MemoryActor {
 
   async pushBranch () {}
   withExistingPrApp () {}
+  withClosedPullRequest () {}
 
   async openPullRequest () {
     this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch, this.prNumber)
+  }
+
+  async reopenPullRequest () {
+    this.currentPrNotifier = await this.codeHostingService.reopenPullRequest(this.currentBranch, this.prNumber)
   }
 
   async pushMoreChanges () {
@@ -83,6 +88,11 @@ class MemoryCodeHostingService {
   }
 
   async openPullRequest (branch, prNumber) {
+    await this.prApps.deployPullRequest({branch, prNumber})
+    return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
+  }
+
+  async reopenPullRequest (branch, prNumber) {
     await this.prApps.deployPullRequest({branch, prNumber})
     return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
   }

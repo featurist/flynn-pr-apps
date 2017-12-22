@@ -125,12 +125,22 @@ class ApiActor {
     await this.shouldSeeNewApp()
   }
 
+  async withClosedPullRequest () {
+    await this.pushBranch()
+    await this.openPullRequest()
+    await this.closePullRequest()
+  }
+
   async pushBranch () {
     await this.userLocalRepo.pushBranch(this.currentBranch, '<h1>Hello World!</h1>')
   }
 
   async openPullRequest () {
     this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
+  }
+
+  async reopenPullRequest () {
+    this.currentPrNotifier = await this.codeHostingService.reopenPullRequest(this.currentPrNotifier.prNumber)
   }
 
   async createPrApp () {

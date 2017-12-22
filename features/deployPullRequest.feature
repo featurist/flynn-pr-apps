@@ -29,3 +29,8 @@ Feature: Deploy Github pull request
     Given Frank received a notification that his app is updated
     When Frank follows the link in the notifiation
     Then Frank sees the updated app
+
+  Scenario: User reopens pull request
+    Given Frank has a closed pull request
+    When Frank reopens that pull request
+    Then Frank should see that deploy of a pr app has started

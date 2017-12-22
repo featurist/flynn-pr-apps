@@ -77,7 +77,7 @@ module.exports = function ({prApps, webhookSecret}) {
 
       debug('pull_request action', action)
 
-      if (action === 'opened') {
+      if (action === 'opened' || action === 'reopened') {
         debug('Initiating new deploy')
         res.status(200).send('Initiating new deploy')
         await prApps.deployPullRequest({branch, prNumber: number})

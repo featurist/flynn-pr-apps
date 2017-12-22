@@ -83,3 +83,12 @@ Then('{actor} can no longer access the app', async function (actor) {
 When('{actor} merges that app\'s pr', async function (actor) {
   await actor.mergePullRequest()
 })
+
+Given('{actor} has a closed pull request', async function (actor) {
+  await actor.withClosedPullRequest()
+  await this.assembly.createGithubWebhooks()
+})
+
+When('{actor} reopens that pull request', async function (actor) {
+  await actor.reopenPullRequest()
+})

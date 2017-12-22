@@ -102,6 +102,16 @@ module.exports = class GithubService {
       state: 'closed'
     })
   }
+
+  async reopenPullRequest (prNumber) {
+    const {data: pr} = await this.ghApi.pullRequests.update({
+      owner: this.owner,
+      repo: this.repo,
+      number: prNumber,
+      state: 'open'
+    })
+    return new CurrentPrNotifier({prNotifier: this.prNotifier, pr})
+  }
 }
 
 class CurrentPrNotifier {

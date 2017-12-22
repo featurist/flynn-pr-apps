@@ -4,7 +4,7 @@ Automatically deploy pull requests into flynn cluster. Heroku Review Apps DIY.
 
 ## Usage
 
-### Creaate pr-apps flynn app
+### Create pr-apps flynn app
 
 ```
 git clone https://github.com/featurist/pr-apps
@@ -17,6 +17,8 @@ flynn env set FLYNN_CLUSTER_DOMAIN=prs.example.com
 flynn env set FLYNN_AUTH_KEY=$(flynn -a controller env get AUTH_KEY)
 git push flynn master
 ```
+
+Github account above should be a collaborator with `Admin` privileges (for github api access).
 
 ### Register github webhook
 

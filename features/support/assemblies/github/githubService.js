@@ -86,6 +86,14 @@ module.exports = class GithubService {
     return new CurrentPrNotifier({prNotifier: this.prNotifier, pr})
   }
 
+  async mergePullRequest (prNumber) {
+    await this.ghApi.pullRequests.merge({
+      owner: this.owner,
+      repo: this.repo,
+      number: prNumber
+    })
+  }
+
   async closePullRequest (prNumber) {
     await this.ghApi.pullRequests.update({
       owner: this.owner,

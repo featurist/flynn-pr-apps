@@ -79,3 +79,7 @@ When('{actor} closes that app\'s pr', async function (actor) {
 Then('{actor} can no longer access the app', async function (actor) {
   await actor.shouldNotSeeApp()
 })
+
+When('{actor} merges that app\'s pr', async function (actor) {
+  await actor.mergePullRequest()
+})

@@ -49,6 +49,10 @@ class MemoryActor {
     await this.codeHostingService.closePullRequest(this.prNumber)
   }
 
+  async mergePullRequest () {
+    await this.codeHostingService.mergePullRequest(this.prNumber)
+  }
+
   async shouldSeeDeployStarted () {
     this.currentPrNotifier.waitForDeployStarted()
   }
@@ -89,6 +93,10 @@ class MemoryCodeHostingService {
   }
 
   async closePullRequest (prNumber) {
+    await this.prApps.destroyPrApp(prNumber)
+  }
+
+  async mergePullRequest (prNumber) {
     await this.prApps.destroyPrApp(prNumber)
   }
 }

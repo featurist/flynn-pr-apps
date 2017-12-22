@@ -13,8 +13,11 @@ module.exports = class GitRepo {
     this.git = simpleGit(this.tmpDir.name)
       .env('GIT_SSL_NO_VERIFY', true)
     await this.git.init()
+    fs.writeFileSync(`${this.tmpDir.name}/readme.md`, '# Pr Apps test repo')
+    await this.git.add('.')
+    await this.git.commit('init')
     await this.git.addRemote('origin', this.repoUrl)
-    await this.git.pull('origin', 'master')
+    await this.git.push(['-f', 'origin', 'master'])
   }
 
   async destroy () {

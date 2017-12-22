@@ -142,6 +142,10 @@ class ApiActor {
     await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
   }
 
+  async mergePullRequest () {
+    await this.codeHostingService.mergePullRequest(this.currentPrNotifier.prNumber)
+  }
+
   async closePullRequest () {
     await this.codeHostingService.closePullRequest(this.currentPrNotifier.prNumber)
   }

@@ -14,8 +14,6 @@ const HeadlessBrowser = require('./headlessBrowser')
 const FakeFlynnApi = require('./fakeFlynnApi')
 const getRandomPort = require('./getRandomPort')
 
-const testGhRepoUrl = `https://${process.env.TEST_GH_USER_TOKEN}@github.com/${process.env.TEST_GH_REPO}.git`
-
 module.exports = class GithubAssembly {
   async setup () {
     this.port = await getRandomPort()
@@ -58,7 +56,11 @@ module.exports = class GithubAssembly {
 
     this.prAppsServer = this.prAppsApp.listen(this.port)
 
-    this.userLocalRepo = new GitRepo({repoUrl: testGhRepoUrl})
+    this.userLocalRepo = new GitRepo({
+      repo: process.env.TEST_GH_REPO,
+      token: process.env.TEST_GH_USER_TOKEN
+    })
+
     this.codeHostingService = new GithubService({
       repo: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN,

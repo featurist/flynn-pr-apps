@@ -2,10 +2,11 @@ const fs = require('fs')
 const path = require('path')
 const simpleGit = require('simple-git/promise')
 const tmp = require('tmp')
+const GithubUrl = require('../../../../lib/githubUrl')
 
 module.exports = class GitRepo {
-  constructor ({repoUrl}) {
-    this.repoUrl = repoUrl
+  constructor ({repo, token}) {
+    ({authenticatedRepoUrl: this.repoUrl} = new GithubUrl({repo, token}))
   }
 
   async create () {

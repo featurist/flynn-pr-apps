@@ -1,10 +1,11 @@
 const GitHubApi = require('github')
 const retry = require('trytryagain')
 const {expect} = require('chai')
+const GithubUrl = require('../../../../lib/githubUrl')
 
 module.exports = class GithubService {
   constructor ({prNotifier, repo, token}) {
-    [this.owner, this.repo] = repo.split('/')
+    ({owner: this.owner, repo: this.repo} = new GithubUrl({repo, token}))
     this.ghApi = new GitHubApi()
     this.ghApi.authenticate({
       type: 'token',

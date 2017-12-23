@@ -13,6 +13,9 @@ module.exports = class GitRepo {
     this.git = simpleGit(this.tmpDir.name)
       .env('GIT_SSL_NO_VERIFY', true)
     await this.git.init()
+    await this.git.addConfig('user.name', 'pr-apps')
+    await this.git.addConfig('user.email', 'pr-apps@stuff.com')
+
     fs.writeFileSync(`${this.tmpDir.name}/readme.md`, '# Pr Apps test repo')
     await this.git.add('.')
     await this.git.commit('init')

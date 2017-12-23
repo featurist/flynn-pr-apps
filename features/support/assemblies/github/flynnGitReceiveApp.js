@@ -15,7 +15,7 @@ module.exports = function ({reposDir}) {
       if (err) return res.end(err + '\n')
 
       res.setHeader('content-type', service.type)
-      debug(service.action, repo, service.fields)
+      debug(service.action, repo)
 
       const ps = spawn(service.cmd, service.args.concat(dir))
       ps.stdout.pipe(service.createStream()).pipe(ps.stdin)

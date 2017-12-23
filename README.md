@@ -29,23 +29,24 @@ Set content type to `application/json` and `Disable SSL verification`. More abou
 
 Once up, pr-apps will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app specified in `GH_REPO` in your flynn cluster. The deployed app url will be shown on github pull request page.
 
-TODO describe worker that destroys stale prs when (and if) there is such thing
+### App manifest
 
-TODO pr-apps.yaml
+Applications beyond trivial often require custom environment variables, extra resources, services and endpoints. Drop `pr-apps.yaml` in the root of your project to be able to customise all this. E.g.:
 
 ```
 env:
-  FOO: bar
+  API_URL: "https://api-${APP_DOMAIN}"
   DEBUG: true
 resources:
   - redis
 routes:
-  api-web:
-    subdomain: api
+  api-web: api-${APP_DOMAIN}
 scale:
   web: 2
   api-web: 1
 ```
+
+`$APP_DOMAIN` will be interpolated. E.g. `pr-234.prs.example.com`
 
 ## Development
 

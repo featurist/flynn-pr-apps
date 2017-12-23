@@ -32,9 +32,6 @@ module.exports = class GithubAssembly {
       token: process.env.TEST_GH_USER_TOKEN
     })
 
-    // so that http client can request `https://` urls served by fake flynn api
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
-
     this.fakeFlynnApi = new FakeFlynnApi({
       authKey: 'flynnApiAuthKey'
     })

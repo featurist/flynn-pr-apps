@@ -5,6 +5,7 @@ const {expect} = require('chai')
 const PrApps = require('../../../../lib/prApps')
 const GithubApiAdapter = require('../../../../lib/githubApiAdapter')
 const GitProject = require('../../../../lib/gitProject')
+const FsAdapter = require('../../../../lib/fsAdapter')
 const FlynnService = require('../../../../lib/flynnService')
 const createPrAppsApp = require('../../../..')
 const createPrNotifierApp = require('./prNotifierApp')
@@ -27,7 +28,8 @@ module.exports = class GithubAssembly {
     })
     const scmProject = new GitProject({
       repo: process.env.TEST_GH_REPO,
-      token: process.env.TEST_GH_USER_TOKEN
+      token: process.env.TEST_GH_USER_TOKEN,
+      fs: new FsAdapter()
     })
 
     this.fakeFlynnApi = new FakeFlynnApi({

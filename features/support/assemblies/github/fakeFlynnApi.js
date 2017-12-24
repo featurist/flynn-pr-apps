@@ -1,4 +1,3 @@
-const tmp = require('tmp')
 const simpleGit = require('simple-git/promise')
 const {execSync} = require('child_process')
 const express = require('express')
@@ -11,17 +10,19 @@ const basicauth = require('basicauth-middleware')
 const morgan = require('morgan')
 const debug = require('debug')('pr-apps:fakeFlynnApi')
 const getRandomPort = require('./getRandomPort')
+const FsAdapter = require('../../../../lib/fsAdapter')
 
 module.exports = class FakeFlynnApi {
   constructor ({authKey}) {
     this.authKey = authKey
     this.apps = {}
+    this.fs = new FsAdapter()
   }
 
   async start () {
     this.port = await getRandomPort()
-    this.reposDir = tmp.dirSync({unsafeCleanup: true})
-    this.appsDir = tmp.dirSync({unsafeCleanup: true})
+    this.reposDir = this.fs.makeTempDir()
+    this.appsDir = this.fs.makeTempDir()
 
     const app = express()
     const deployedApps = express()
@@ -77,7 +78,7 @@ module.exports = class FakeFlynnApi {
     })
 
     const flynnGitReceive = createFlynnGitReceiveApp({
-      reposDir: this.reposDir.name
+      reposDir: this.reposDir
     })
     flynnGitReceive.use(basicAuth)
     flynnGitReceive.on('post-receive', (repo) => {
@@ -86,7 +87,7 @@ module.exports = class FakeFlynnApi {
 
     deployedApps.get('/', (req, res) => {
       const appName = req.subdomains[1]
-      const appIndex = `${this.appsDir.name}/${appName}/index.html`
+      const appIndex = `${this.appsDir}/${appName}/index.html`
       if (fs.existsSync(appIndex)) {
         res.sendFile(appIndex)
       } else {
@@ -106,15 +107,13 @@ module.exports = class FakeFlynnApi {
   }
 
   async stop () {
-    return Promise.all([
-      this.reposDir ? this.reposDir.removeCallback() : Promise.resolve(),
-      this.appsDir ? this.appsDir.removeCallback() : Promise.resolve(),
-      new Promise(resolve => this.appServer.close(resolve))
-    ])
+    this.fs.rmRf(this.reposDir)
+    this.fs.rmRf(this.appsDir)
+    return new Promise(resolve => this.appServer.close(resolve))
   }
 
   async _createAppRepo (appName) {
-    const dir = `${this.reposDir.name}/${appName}.git`
+    const dir = `${this.reposDir}/${appName}.git`
     fs.ensureDirSync(dir)
 
     const repo = simpleGit(dir)
@@ -123,17 +122,17 @@ module.exports = class FakeFlynnApi {
 
   _deployToWebLocation (repo) {
     const appName = repo.replace(/\.git/, '')
-    const appDir = `${this.appsDir.name}/${appName}`
+    const appDir = `${this.appsDir}/${appName}`
     fs.ensureDirSync(appDir)
 
     const postReceiveHook =
-      `git --work-tree=${appDir} --git-dir=${this.reposDir.name}/${repo} checkout -f`
+      `git --work-tree=${appDir} --git-dir=${this.reposDir}/${repo} checkout -f`
 
     execSync(postReceiveHook, {stdio: 'inherit'})
   }
 
   _destroyAppRepo (appName) {
-    const dir = `${this.reposDir.name}/${appName}.git`
+    const dir = `${this.reposDir}/${appName}.git`
     debug('Destroying app repo %s', dir)
     if (!fs.existsSync(dir)) {
       throw new Error(`Attempting to destroy non-existing repo ${dir}`)
@@ -142,7 +141,7 @@ module.exports = class FakeFlynnApi {
   }
 
   _removeAppWebLocation (appName) {
-    const dir = `${this.appsDir.name}/${appName}`
+    const dir = `${this.appsDir}/${appName}`
     debug('Removing web location %s', dir)
     if (!fs.existsSync(dir)) {
       throw new Error(`Attempting to remove non-existing web location ${dir}`)

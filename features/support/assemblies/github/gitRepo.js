@@ -1,35 +1,36 @@
 const fs = require('fs')
 const path = require('path')
 const simpleGit = require('simple-git/promise')
-const tmp = require('tmp')
+const FsAdapter = require('../../../../lib/fsAdapter')
 const GithubUrl = require('../../../../lib/githubUrl')
 
 module.exports = class GitRepo {
   constructor ({repo, token}) {
     ({authenticatedRepoUrl: this.repoUrl} = new GithubUrl({repo, token}))
+    this.fs = new FsAdapter()
   }
 
   async create () {
-    this.tmpDir = tmp.dirSync({unsafeCleanup: true})
-    this.git = simpleGit(this.tmpDir.name)
+    this.tmpDir = this.fs.makeTempDir()
+    this.git = simpleGit(this.tmpDir)
       .env('GIT_SSL_NO_VERIFY', true)
     await this.git.init()
     await this.git.addConfig('user.name', 'pr-apps')
     await this.git.addConfig('user.email', 'pr-apps@stuff.com')
 
-    fs.writeFileSync(`${this.tmpDir.name}/readme.md`, '# Pr Apps test repo')
+    fs.writeFileSync(`${this.tmpDir}/readme.md`, '# Pr Apps test repo')
     await this.git.add('.')
     await this.git.commit('init')
     await this.git.addRemote('origin', this.repoUrl)
     await this.git.push(['-f', 'origin', 'master'])
   }
 
-  async destroy () {
-    return this.tmpDir.removeCallback()
+  destroy () {
+    this.fs.rmRf(this.tmpDir)
   }
 
   async pushBranch (branch, content) {
-    const index = path.join(this.tmpDir.name, 'index.html')
+    const index = path.join(this.tmpDir, 'index.html')
 
     if (this.currentBranch === branch) {
       fs.appendFileSync(index, content)

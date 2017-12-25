@@ -66,6 +66,8 @@ class MemoryActor {
 
   async shouldSeeDeployStarted () {
     this.currentPrNotifier.waitForDeployStarted()
+    const lastFlynnAppUrl = this.flynnService.lastFlynnAppUrl
+    expect(lastFlynnAppUrl).to.eq(`https://dashboard.prs.example.com/apps/pr-${this.prNumber}`)
   }
 
   async shouldSeeDeployFinished () {
@@ -125,7 +127,6 @@ class PrNotifier {
 
   waitForDeployStarted () {
     const {branch, status} = this.codeHostingServiceApi.updateDeployStatusRequests[0]
-
     expect(branch).to.eq(this.branch)
     expect(status).to.eq('pending')
   }
@@ -135,11 +136,9 @@ class PrNotifier {
   }
 
   waitForDeploySuccessful () {
-    const {branch, status, deployedAppUrl} = this.codeHostingServiceApi.updateDeployStatusRequests[1]
+    const {branch, status} = this.codeHostingServiceApi.updateDeployStatusRequests[1]
     expect(branch).to.eq(this.branch)
     expect(status).to.eq('success')
-
-    return deployedAppUrl
   }
 }
 
@@ -154,12 +153,13 @@ class MemoryCodeHostingServiceApi {
     }
   }
 
-  async updateDeploymentStatus (deployment, status, deployedAppUrl) {
+  async updateDeploymentStatus (deployment, status, {deployedAppUrl, flynnAppUrl}) {
     if (this.recordRequests) {
       this.updateDeployStatusRequests.push({
         branch: deployment.branch,
         status,
-        deployedAppUrl
+        deployedAppUrl,
+        flynnAppUrl
       })
     }
   }
@@ -182,8 +182,10 @@ class FlynnServiceMemory {
 
   createApp (appName) {
     this.lastDeployedAppUrl = `https://${appName}.${this.clusterUrl}`
+    this.lastFlynnAppUrl = `https://dashboard.${this.clusterUrl}/apps/${appName}`
     return {
-      webUrl: this.lastDeployedAppUrl
+      webUrl: this.lastDeployedAppUrl,
+      flynnUrl: this.lastFlynnAppUrl
     }
   }
 
@@ -193,8 +195,10 @@ class FlynnServiceMemory {
 
   getApp (appName) {
     this.lastDeployedAppUrl = `https://${appName}.${this.clusterUrl}`
+    this.lastFlynnAppUrl = `https://dashboard.${this.clusterUrl}/apps/${appName}`
     return {
-      webUrl: `https://${appName}.${this.clusterUrl}`
+      webUrl: `https://${appName}.${this.clusterUrl}`,
+      flynnUrl: this.lastFlynnAppUrl
     }
   }
 }

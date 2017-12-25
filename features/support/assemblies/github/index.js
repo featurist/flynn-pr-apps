@@ -6,6 +6,7 @@ const PrApps = require('../../../../lib/prApps')
 const GithubApiAdapter = require('../../../../lib/githubApiAdapter')
 const GitProject = require('../../../../lib/gitProject')
 const FsAdapter = require('../../../../lib/fsAdapter')
+const GitAdapter = require('../../../../lib/gitAdapter')
 const FlynnService = require('../../../../lib/flynnService')
 const createPrAppsApp = require('../../../..')
 const createPrNotifierApp = require('./prNotifierApp')
@@ -22,14 +23,17 @@ module.exports = class GithubAssembly {
   }
 
   async start () {
-    const codeHostingServiceApi = new GithubApiAdapter({
-      repo: process.env.TEST_GH_REPO,
-      token: process.env.TEST_GH_USER_TOKEN
-    })
+    const fs = new FsAdapter()
+    const git = new GitAdapter({fs})
     const scmProject = new GitProject({
       repo: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN,
-      fs: new FsAdapter()
+      git
+    })
+
+    const codeHostingServiceApi = new GithubApiAdapter({
+      repo: process.env.TEST_GH_REPO,
+      token: process.env.TEST_GH_USER_TOKEN
     })
 
     this.fakeFlynnApi = new FakeFlynnApi({

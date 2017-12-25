@@ -1,16 +1,22 @@
 const PrApps = require('../../../lib/prApps')
+const GitProject = require('../../../lib/gitProject')
 const {expect} = require('chai')
 
 module.exports = class MemoryAssembly {
   async setup () {}
   async start () {}
   async stop () {}
+
   createActor () {
     this.flynnService = new FlynnServiceMemory('prs.example.com')
     this.codeHostingServiceApi = new MemoryCodeHostingServiceApi()
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
-      scmProject: new ScmProjectMemory(),
+      scmProject: new GitProject({
+        token: 'secret',
+        repo: 'https://github.com/asdfsd/bbbb.git',
+        git: new GitMemory()
+      }),
       flynnService: this.flynnService
     })
     const codeHostingService = new MemoryCodeHostingService({prApps})
@@ -159,12 +165,12 @@ class MemoryCodeHostingServiceApi {
   }
 }
 
-class ScmProjectMemory {
-  clone (branch, fn) {
-    fn({
+class GitMemory {
+  makeShallowPushableClone () {
+    return {
       push () {},
       remove () {}
-    })
+    }
   }
 }
 

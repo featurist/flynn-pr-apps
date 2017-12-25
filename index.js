@@ -7,6 +7,8 @@ const GithubApiAdapter = require('./lib/githubApiAdapter')
 const PrApps = require('./lib/prApps')
 const GitProject = require('./lib/gitProject')
 const FlynnService = require('./lib/flynnService')
+const FsAdapter = require('./lib/fsAdapter')
+const GitAdapter = require('./lib/gitAdapter')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -99,11 +101,15 @@ module.exports = function ({prApps, webhookSecret}) {
 }
 
 if (!module.parent) {
-  const codeHostingServiceApi = new GithubApiAdapter({
-    token: process.env.GH_USER_TOKEN,
-    repo: process.env.GH_REPO
-  })
+  const fs = new FsAdapter()
+  const git = new GitAdapter({fs})
+
   const scmProject = new GitProject({
+    token: process.env.GH_USER_TOKEN,
+    repo: process.env.GH_REPO,
+    git
+  })
+  const codeHostingServiceApi = new GithubApiAdapter({
     token: process.env.GH_USER_TOKEN,
     repo: process.env.GH_REPO
   })

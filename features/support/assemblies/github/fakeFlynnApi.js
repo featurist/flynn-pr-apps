@@ -1,4 +1,3 @@
-const simpleGit = require('simple-git/promise')
 const {execSync} = require('child_process')
 const express = require('express')
 const fs = require('fs-extra')
@@ -11,6 +10,7 @@ const morgan = require('morgan')
 const debug = require('debug')('pr-apps:fakeFlynnApi')
 const getRandomPort = require('./getRandomPort')
 const FsAdapter = require('../../../../lib/fsAdapter')
+const ShellAdapter = require('../../../../lib/shellAdapter')
 
 module.exports = class FakeFlynnApi {
   constructor ({authKey}) {
@@ -116,8 +116,8 @@ module.exports = class FakeFlynnApi {
     const dir = `${this.reposDir}/${appName}.git`
     fs.ensureDirSync(dir)
 
-    const repo = simpleGit(dir)
-    await repo.init(true)
+    const sh = new ShellAdapter({cwd: dir})
+    await sh('git init --bare')
   }
 
   _deployToWebLocation (repo) {

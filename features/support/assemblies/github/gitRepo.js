@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
-const simpleGit = require('simple-git/promise')
 const FsAdapter = require('../../../../lib/fsAdapter')
+const ShellAdapter = require('../../../../lib/shellAdapter')
 const GithubUrl = require('../../../../lib/githubUrl')
 
 module.exports = class GitRepo {
@@ -12,17 +12,17 @@ module.exports = class GitRepo {
 
   async create () {
     this.tmpDir = this.fs.makeTempDir()
-    this.git = simpleGit(this.tmpDir)
-      .env('GIT_SSL_NO_VERIFY', true)
-    await this.git.init()
-    await this.git.addConfig('user.name', 'pr-apps')
-    await this.git.addConfig('user.email', 'pr-apps@stuff.com')
+    this.sh = new ShellAdapter({cwd: this.tmpDir})
+
+    await this.sh('git init')
+    await this.sh('git config --add user.name pr-apps')
+    await this.sh('git config --add user.email pr-apps@pr-apps.pr')
 
     fs.writeFileSync(`${this.tmpDir}/readme.md`, '# Pr Apps test repo')
-    await this.git.add('.')
-    await this.git.commit('init')
-    await this.git.addRemote('origin', this.repoUrl)
-    await this.git.push(['-f', 'origin', 'master'])
+    await this.sh('git add .')
+    await this.sh('git commit -m "init"')
+    await this.sh(`git remote add origin ${this.repoUrl}`)
+    await this.sh('git push -f origin master')
   }
 
   destroy () {
@@ -35,23 +35,23 @@ module.exports = class GitRepo {
     if (this.currentBranch === branch) {
       fs.appendFileSync(index, content)
 
-      await this.git.add('.')
-      await this.git.commit('more changes')
-      await this.git.push('origin', branch)
+      await this.sh('git add .')
+      await this.sh('git commit -m "more changes"')
+      await this.sh(`git push origin ${branch}`)
     } else {
-      await this.git.checkoutLocalBranch(branch)
+      await this.sh(`git checkout -b ${branch}`)
       this.currentBranch = branch
 
       fs.writeFileSync(index, content)
 
-      await this.git.add('.')
-      await this.git.commit('add index.js')
-      await this.git.push(['--set-upstream', 'origin', branch])
+      await this.sh('git add .')
+      await this.sh('git commit -m "add index.js"')
+      await this.sh(`git push --set-upstream origin ${branch}`)
     }
   }
 
   async pushCurrentBranchToFlynn (repoUrl) {
-    await this.git.addRemote('flynn', repoUrl)
-    await this.git.push('flynn', `${this.currentBranch}:master`)
+    await this.sh(`git remote add flynn ${repoUrl}`)
+    await this.sh(`git -c http.sslVerify=false push flynn ${this.currentBranch}:master`)
   }
 }

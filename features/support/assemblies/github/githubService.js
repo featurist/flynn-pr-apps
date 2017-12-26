@@ -147,4 +147,14 @@ class CurrentPrNotifier {
       })
     }, {timeout: 10000})
   }
+
+  async waitForDeployFailed () {
+    await retry(async () => {
+      const currentDeploymentStatus = this.prNotifier.deploymentStatusEvents[1]
+      expect(currentDeploymentStatus).to.eql({
+        ref: this.pr.head.ref,
+        state: 'failure'
+      })
+    }, {timeout: 10000})
+  }
 }

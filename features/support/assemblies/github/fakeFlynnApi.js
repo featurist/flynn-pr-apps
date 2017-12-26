@@ -1,4 +1,3 @@
-const {execSync} = require('child_process')
 const express = require('express')
 const fs = require('fs-extra')
 const https = require('https')
@@ -11,6 +10,17 @@ const debug = require('debug')('pr-apps:fakeFlynnApi')
 const getRandomPort = require('./getRandomPort')
 const FsAdapter = require('../../../../lib/fsAdapter')
 const ShellAdapter = require('../../../../lib/shellAdapter')
+
+function createPreReceiveHook (appDir) {
+  return `
+#!/bin/bash
+
+while read oldrev newrev refname
+do
+  git archive $newrev | tar -x -C ${appDir}
+done
+`
+}
 
 module.exports = class FakeFlynnApi {
   constructor ({authKey}) {
@@ -81,9 +91,6 @@ module.exports = class FakeFlynnApi {
       reposDir: this.reposDir
     })
     flynnGitReceive.use(basicAuth)
-    flynnGitReceive.on('post-receive', (repo) => {
-      this._deployToWebLocation(repo)
-    })
 
     deployedApps.get('/', (req, res) => {
       const appName = req.subdomains[1]
@@ -112,23 +119,27 @@ module.exports = class FakeFlynnApi {
     return new Promise(resolve => this.appServer.close(resolve))
   }
 
-  async _createAppRepo (appName) {
-    const dir = `${this.reposDir}/${appName}.git`
-    fs.ensureDirSync(dir)
-
-    const sh = new ShellAdapter({cwd: dir})
-    await sh('git init --bare')
+  failNextDeploy () {
+    this.nextDeployShouldFail = true
   }
 
-  _deployToWebLocation (repo) {
-    const appName = repo.replace(/\.git/, '')
+  async _createAppRepo (appName) {
+    const repoDir = `${this.reposDir}/${appName}.git`
+    fs.ensureDirSync(repoDir)
+
+    const sh = new ShellAdapter({cwd: repoDir})
+    await sh('git init --bare')
+
     const appDir = `${this.appsDir}/${appName}`
     fs.ensureDirSync(appDir)
 
-    const postReceiveHook =
-      `git --work-tree=${appDir} --git-dir=${this.reposDir}/${repo} checkout -f`
+    const preReceiveHook = this.nextDeployShouldFail
+      ? '#!/bin/sh\necho "Deploy failed" && exit 1'
+      : createPreReceiveHook(appDir)
 
-    execSync(postReceiveHook, {stdio: 'inherit'})
+    fs.writeFileSync(`${repoDir}/hooks/pre-receive`, preReceiveHook, {
+      mode: '777'
+    })
   }
 
   _destroyAppRepo (appName) {

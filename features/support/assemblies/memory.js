@@ -4,7 +4,13 @@ const {expect} = require('chai')
 
 module.exports = class MemoryAssembly {
   async setup () {}
-  async start () {}
+  async start () {
+    this.fakeFlynnApi = {
+      failNextDeploy () {
+        this.nextDeployShouldFail = true
+      }
+    }
+  }
   async stop () {}
 
   createActor () {
@@ -15,7 +21,7 @@ module.exports = class MemoryAssembly {
       scmProject: new GitProject({
         token: 'secret',
         repo: 'https://github.com/asdfsd/bbbb.git',
-        git: new GitMemory()
+        git: new GitMemory(this.fakeFlynnApi)
       }),
       flynnService: this.flynnService
     })
@@ -78,6 +84,10 @@ class MemoryActor {
     this.currentPrNotifier.waitForDeploySuccessful()
   }
 
+  async shouldSeeDeployFailed () {
+    this.currentPrNotifier.waitForDeployFailed()
+  }
+
   async followDeployedAppLink () {
     const deployedAppUrl = this.flynnService.lastDeployedAppUrl
     expect(deployedAppUrl).to.eq(`https://pr-${this.prNumber}.prs.example.com`)
@@ -96,7 +106,11 @@ class MemoryCodeHostingService {
   }
 
   async openPullRequest (branch, prNumber) {
-    await this.prApps.deployPullRequest({branch, prNumber})
+    try {
+      await this.prApps.deployPullRequest({branch, prNumber})
+    } catch (e) {
+      console.error(e)
+    }
     return new PrNotifier(this.prApps.codeHostingServiceApi, branch)
   }
 
@@ -140,6 +154,12 @@ class PrNotifier {
     expect(branch).to.eq(this.branch)
     expect(status).to.eq('success')
   }
+
+  waitForDeployFailed () {
+    const {branch, status} = this.codeHostingServiceApi.updateDeployStatusRequests[1]
+    expect(branch).to.eq(this.branch)
+    expect(status).to.eq('failure')
+  }
 }
 
 class MemoryCodeHostingServiceApi {
@@ -166,9 +186,18 @@ class MemoryCodeHostingServiceApi {
 }
 
 class GitMemory {
+  constructor (fakeFlynnApi) {
+    this.fakeFlynnApi = fakeFlynnApi
+  }
+
   makeShallowPushableClone () {
     return {
-      push () {},
+      push: () => {
+        if (this.fakeFlynnApi.nextDeployShouldFail) {
+          delete this.fakeFlynnApi.nextDeployShouldFail
+          throw new Error('Pre receive hook failed')
+        }
+      },
       remove () {}
     }
   }

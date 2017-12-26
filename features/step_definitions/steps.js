@@ -92,3 +92,19 @@ Given('{actor} has a closed pull request', async function (actor) {
 When('{actor} reopens that pull request', async function (actor) {
   await actor.reopenPullRequest()
 })
+
+Given('the deploy of {actor}\'s broken pr app has started', async function (actor) {
+  this.assembly.fakeFlynnApi.failNextDeploy()
+  await this.assembly.createGithubWebhooks()
+  await actor.pushBranch()
+  await actor.openPullRequest()
+  this.currentActor = actor
+})
+
+When('the deploy fails', async function () {
+  await this.currentActor.shouldSeeDeployFinished()
+})
+
+Then('{actor} sees that the deploy failed', async function (actor) {
+  await actor.shouldSeeDeployFailed()
+})

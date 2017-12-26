@@ -19,12 +19,6 @@ module.exports = function ({reposDir}) {
 
       const ps = spawn(service.cmd, service.args.concat(dir))
       ps.stdout.pipe(service.createStream()).pipe(ps.stdin)
-
-      ps.on('close', (code) => {
-        if (service.action === 'push' && code === 0) {
-          app.emit('post-receive', repo)
-        }
-      })
     })).pipe(res)
   })
 

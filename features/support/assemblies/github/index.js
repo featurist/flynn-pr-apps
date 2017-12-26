@@ -177,6 +177,10 @@ class ApiActor {
     await this.currentPrNotifier.waitForDeploySuccessful()
   }
 
+  async shouldSeeDeployFailed () {
+    await this.currentPrNotifier.waitForDeployFailed()
+  }
+
   async followDeployedAppLink () {
     const browser = new HeadlessBrowser()
     const deployedAppUrl = `https://pr-${this.currentPrNotifier.prNumber}.${this.flynnService.clusterDomain}`

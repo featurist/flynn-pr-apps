@@ -116,7 +116,7 @@ module.exports = class FakeFlynnApi {
   async stop () {
     this.fs.rmRf(this.reposDir)
     this.fs.rmRf(this.appsDir)
-    return new Promise(resolve => this.appServer.close(resolve))
+    await new Promise(resolve => this.appServer.close(resolve))
   }
 
   failNextDeploy () {

@@ -1,4 +1,4 @@
-# PR apps
+# PR apps [![Build Status](https://semaphoreci.com/api/v1/featurist/pr-apps/branches/master/badge.svg)](https://semaphoreci.com/featurist/pr-apps)
 
 Automatically deploy pull requests into flynn cluster. Heroku Review Apps DIY.
 

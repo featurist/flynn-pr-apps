@@ -1,14 +1,14 @@
-# PR apps [![Build Status](https://semaphoreci.com/api/v1/featurist/pr-apps/branches/master/badge.svg)](https://semaphoreci.com/featurist/pr-apps)
+# Flynn PR apps [![Build Status](https://semaphoreci.com/api/v1/featurist/flynn-pr-apps/branches/master/badge.svg)](https://semaphoreci.com/featurist/flynn-pr-apps)
 
-Automatically deploy pull requests into flynn cluster. Heroku Review Apps DIY.
+Automatically deploy pull requests into [Flynn](https://flynn.io/) cluster. Heroku Review Apps DIY.
 
 ## Usage
 
 ### Create pr-apps flynn app
 
 ```
-git clone https://github.com/featurist/pr-apps
-cd pr-apps
+git clone https://github.com/featurist/flynn-pr-apps
+cd flynn-pr-apps
 flynn create pr-apps
 flynn env set GH_REPO=https://github.com/some-org/some-repo.git
 flynn env set GH_USER_TOKEN=YOUR_TOKEN
@@ -55,7 +55,8 @@ Needs some extra environment:
 `GH_USER_TOKEN` API token of the account that is able to pull code and create deployments on the above repo.
 
 ```
-git clone https://github.com/featurist/pr-apps
+git clone https://github.com/featurist/flynn-pr-apps
+cd flynn-pr-apps
 nvm use
 yarn install
 yarn start

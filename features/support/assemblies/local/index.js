@@ -20,6 +20,11 @@ module.exports = class LocalAssembly {
   setup () {}
 
   async start () {
+    [this.prAppsPort, this.fakeFlynnApiPort] = await Promise.all([
+      getRandomPort(),
+      getRandomPort()
+    ])
+
     this.fs = new FsAdapter()
     const git = new GitAdapter({fs: this.fs})
 
@@ -33,11 +38,11 @@ module.exports = class LocalAssembly {
     })
 
     this.fakeFlynnApi = new FakeFlynnApi({
-      authKey: 'flynnApiAuthKey'
+      authKey: 'flynnApiAuthKey',
+      port: this.fakeFlynnApiPort
     })
-    await this.fakeFlynnApi.start()
 
-    this.clusterDomain = `prs.localtest.me:${this.fakeFlynnApi.port}`
+    this.clusterDomain = `prs.localtest.me:${this.fakeFlynnApiPort}`
     this.flynnService = new FlynnService({
       clusterDomain: this.clusterDomain,
       authKey: 'flynnApiAuthKey'
@@ -58,11 +63,11 @@ module.exports = class LocalAssembly {
 
     this.userLocalRepo = new GitRepo({remoteUrl})
 
-    this.port = await getRandomPort()
-    this.prAppsServer = this.prAppsApp.listen(this.port)
+    this.prAppsServer = this.prAppsApp.listen(this.prAppsPort)
 
     await Promise.all([
       remoteRepoSh('git init --bare'),
+      this.fakeFlynnApi.start(),
       this.userLocalRepo.create()
     ])
   }
@@ -88,7 +93,7 @@ module.exports = class LocalAssembly {
       userLocalRepo: this.userLocalRepo,
       flynnService: this.flynnService,
       codeHostingServiceApi: this.codeHostingServiceApi,
-      prAppsUrl: `http://localhost:${this.port}`,
+      prAppsUrl: `http://localhost:${this.prAppsPort}`,
       webhookSecret: this.webhookSecret
     })
   }

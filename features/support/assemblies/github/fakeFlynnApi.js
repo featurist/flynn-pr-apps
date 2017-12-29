@@ -7,7 +7,6 @@ const bodyParser = require('body-parser')
 const basicauth = require('basicauth-middleware')
 const morgan = require('morgan')
 const debug = require('debug')('pr-apps:fakeFlynnApi')
-const getRandomPort = require('./getRandomPort')
 const FsAdapter = require('../../../../lib/fsAdapter')
 const ShellAdapter = require('../../../../lib/shellAdapter')
 
@@ -23,14 +22,14 @@ done
 }
 
 module.exports = class FakeFlynnApi {
-  constructor ({authKey}) {
+  constructor ({authKey, port}) {
     this.authKey = authKey
+    this.port = port
     this.apps = {}
     this.fs = new FsAdapter()
   }
 
   async start () {
-    this.port = await getRandomPort()
     this.reposDir = this.fs.makeTempDir()
     this.appsDir = this.fs.makeTempDir()
 

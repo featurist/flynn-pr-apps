@@ -36,12 +36,13 @@ module.exports = class GithubAssembly {
       token: process.env.TEST_GH_USER_TOKEN
     })
 
+    const fakeFlynnApiPort = await getRandomPort()
     this.fakeFlynnApi = new FakeFlynnApi({
-      authKey: 'flynnApiAuthKey'
+      authKey: 'flynnApiAuthKey',
+      port: fakeFlynnApiPort
     })
-    await this.fakeFlynnApi.start()
 
-    this.clusterDomain = `prs.localtest.me:${this.fakeFlynnApi.port}`
+    this.clusterDomain = `prs.localtest.me:${fakeFlynnApiPort}`
     this.flynnService = new FlynnService({
       clusterDomain: this.clusterDomain,
       authKey: 'flynnApiAuthKey'
@@ -76,6 +77,7 @@ module.exports = class GithubAssembly {
     await Promise.all([
       this.codeHostingService.deleteWebhooks(),
       this.codeHostingService.closeAllPrs(),
+      this.fakeFlynnApi.start(),
       this.userLocalRepo.create()
     ])
     await this.codeHostingService.deleteNonMasterBranches()

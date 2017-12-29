@@ -96,8 +96,10 @@ module.exports = class FakeFlynnApi {
       const appName = req.subdomains[1]
       const appIndex = `${this.appsDir}/${appName}/index.html`
       if (fs.existsSync(appIndex)) {
+        debug('Browsing deployed app %s', appIndex)
         res.sendFile(appIndex)
       } else {
+        debug('Deployed app %s not found', appIndex)
         res.send('Pr App Not Found')
       }
     })

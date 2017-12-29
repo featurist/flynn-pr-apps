@@ -5,8 +5,8 @@ const ShellAdapter = require('../../../../lib/shellAdapter')
 const GithubUrl = require('../../../../lib/githubUrl')
 
 module.exports = class GitRepo {
-  constructor ({repo, token}) {
-    ({authenticatedRepoUrl: this.repoUrl} = new GithubUrl({repo, token}))
+  constructor ({remoteUrl, token}) {
+    ({authenticatedRepoUrl: this.remoteUrl} = new GithubUrl({repoUrl: remoteUrl, token}))
     this.fs = new FsAdapter()
   }
 
@@ -21,7 +21,7 @@ module.exports = class GitRepo {
     fs.writeFileSync(`${this.tmpDir}/readme.md`, '# Pr Apps test repo')
     await this.sh('git add .')
     await this.sh('git commit -m "init"')
-    await this.sh(`git remote add origin ${this.repoUrl}`)
+    await this.sh(`git remote add origin ${this.remoteUrl}`)
     await this.sh('git push -f origin master')
   }
 
@@ -50,8 +50,8 @@ module.exports = class GitRepo {
     }
   }
 
-  async pushCurrentBranchToFlynn (repoUrl) {
-    await this.sh(`git remote add flynn ${repoUrl}`)
+  async pushCurrentBranchToFlynn (remoteUrl) {
+    await this.sh(`git remote add flynn ${remoteUrl}`)
     await this.sh(`git -c http.sslVerify=false push flynn ${this.currentBranch}:master`)
   }
 }

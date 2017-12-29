@@ -19,6 +19,8 @@
     "start": "nf start",
     "test": "cucumberjs --backtrace",
     "test-debug": "node --inspect-brk ./node_modules/.bin/cucumber.js",
+    "test-local": "CUCUMBER_ASSEMBLY=local yarn test",
+    "test-local-debug": "CUCUMBER_ASSEMBLY=local yarn test-debug",
     "test-real": "CUCUMBER_ASSEMBLY=github yarn test",
     "test-real-debug": "CUCUMBER_ASSEMBLY=github yarn test-debug"
   },

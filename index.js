@@ -106,7 +106,7 @@ if (!module.parent) {
 
   const scmProject = new GitProject({
     token: process.env.GH_USER_TOKEN,
-    repo: process.env.GH_REPO,
+    remoteUrl: process.env.GH_REPO,
     git
   })
   const codeHostingServiceApi = new GithubApiAdapter({

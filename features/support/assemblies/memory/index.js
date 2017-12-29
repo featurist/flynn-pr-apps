@@ -3,7 +3,7 @@ const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
 const FlynnServiceMemory = require('./flynnServiceMemory')
 const CodeHostingServiceApiMemory = require('./codeHostingServiceApiMemory')
-const CodeHostingServiceMemory = require('./codeHostingServiceMemory')
+const PrAppsClientMemory = require('./prAppsClientMemory')
 const GitMemory = require('./gitMemory')
 
 module.exports = class MemoryAssembly {
@@ -24,25 +24,25 @@ module.exports = class MemoryAssembly {
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject: new GitProject({
         token: 'secret',
-        repo: 'https://github.com/asdfsd/bbbb.git',
+        remoteUrl: 'https://github.com/asdfsd/bbbb.git',
         git: new GitMemory(this.fakeFlynnApi)
       }),
       flynnService: this.flynnService
     })
-    const codeHostingService = new CodeHostingServiceMemory({prApps})
-    return new MemoryActor({prApps, codeHostingService, flynnService: this.flynnService})
+    const prAppsClient = new PrAppsClientMemory({prApps})
+    return new MemoryActor({prApps, prAppsClient, flynnService: this.flynnService})
   }
 
   createGithubWebhooks () {
-    this.codeHostingServiceApi.recordRequests = true
+    this.codeHostingServiceApi.resetRequestsLog()
   }
 }
 
 class MemoryActor {
-  constructor ({prApps, codeHostingService, flynnService}) {
+  constructor ({prApps, prAppsClient, flynnService}) {
     this.prApps = prApps
     this.flynnService = flynnService
-    this.codeHostingService = codeHostingService
+    this.prAppsClient = prAppsClient
     this.currentBranch = 'Feature1'
     this.prNumber = 23
   }
@@ -55,23 +55,23 @@ class MemoryActor {
   withClosedPullRequest () {}
 
   async openPullRequest () {
-    this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch, this.prNumber)
+    this.currentPrNotifier = await this.prAppsClient.openPullRequest(this.currentBranch, this.prNumber)
   }
 
   async reopenPullRequest () {
-    this.currentPrNotifier = await this.codeHostingService.reopenPullRequest(this.currentBranch, this.prNumber)
+    this.currentPrNotifier = await this.prAppsClient.reopenPullRequest(this.currentBranch, this.prNumber)
   }
 
   async pushMoreChanges () {
-    this.currentPrNotifier = await this.codeHostingService.pushMoreChanges(this.currentBranch, this.prNumber)
+    this.currentPrNotifier = await this.prAppsClient.pushMoreChanges(this.currentBranch, this.prNumber)
   }
 
   async closePullRequest () {
-    await this.codeHostingService.closePullRequest(this.prNumber)
+    await this.prAppsClient.closePullRequest(this.prNumber)
   }
 
   async mergePullRequest () {
-    await this.codeHostingService.mergePullRequest(this.prNumber)
+    await this.prAppsClient.mergePullRequest(this.prNumber)
   }
 
   async shouldSeeDeployStarted () {

@@ -26,7 +26,7 @@ module.exports = class GithubAssembly {
     const fs = new FsAdapter()
     const git = new GitAdapter({fs})
     const scmProject = new GitProject({
-      repo: process.env.TEST_GH_REPO,
+      remoteUrl: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN,
       git
     })
@@ -63,7 +63,7 @@ module.exports = class GithubAssembly {
     this.prAppsServer = this.prAppsApp.listen(this.port)
 
     this.userLocalRepo = new GitRepo({
-      repo: process.env.TEST_GH_REPO,
+      remoteUrl: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN
     })
 
@@ -103,7 +103,7 @@ module.exports = class GithubAssembly {
 
   createActor () {
     return new ApiActor({
-      repo: this.userLocalRepo,
+      userLocalRepo: this.userLocalRepo,
       flynnService: this.flynnService,
       codeHostingService: this.codeHostingService
     })
@@ -111,10 +111,10 @@ module.exports = class GithubAssembly {
 }
 
 class ApiActor {
-  constructor ({repo, codeHostingService, flynnService}) {
+  constructor ({userLocalRepo, codeHostingService, flynnService}) {
     this.codeHostingService = codeHostingService
     this.flynnService = flynnService
-    this.userLocalRepo = repo
+    this.userLocalRepo = userLocalRepo
     this.currentBranch = 'Feature1'
   }
 

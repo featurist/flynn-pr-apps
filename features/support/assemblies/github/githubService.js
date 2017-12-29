@@ -5,7 +5,7 @@ const GithubUrl = require('../../../../lib/githubUrl')
 
 module.exports = class GithubService {
   constructor ({prNotifier, repo, token}) {
-    ({owner: this.owner, repo: this.repo} = new GithubUrl({repo, token}))
+    ({owner: this.owner, repo: this.repo} = new GithubUrl({repoUrl: repo, token}))
     this.ghApi = new GitHubApi()
     this.ghApi.authenticate({
       type: 'token',

@@ -17,12 +17,15 @@
   },
   "scripts": {
     "start": "nf start",
-    "test": "cucumberjs --backtrace",
-    "test-debug": "node --inspect-brk ./node_modules/.bin/cucumber.js",
-    "test-local": "CUCUMBER_ASSEMBLY=local yarn test",
-    "test-local-debug": "CUCUMBER_ASSEMBLY=local yarn test-debug",
-    "test-real": "CUCUMBER_ASSEMBLY=github yarn test",
-    "test-real-debug": "CUCUMBER_ASSEMBLY=github yarn test-debug"
+    "test": "yarn test-memory && yarn test-local && yarn test-real",
+    "test-memory": "yarn cucumber",
+    "test-memory-debug": "yarn cucumber-debug",
+    "test-local": "CUCUMBER_ASSEMBLY=local yarn cucumber",
+    "test-local-debug": "CUCUMBER_ASSEMBLY=local yarn cucumber-debug",
+    "test-real": "CUCUMBER_ASSEMBLY=github yarn cucumber",
+    "test-real-debug": "CUCUMBER_ASSEMBLY=github yarn cucumber-debug",
+    "cucumber": "DEBUG=pr-apps* cucumberjs --backtrace",
+    "cucumber-debug": "node --inspect-brk ./node_modules/.bin/cucumber.js"
   },
   "devDependencies": {
     "basicauth-middleware": "^3.0.0",

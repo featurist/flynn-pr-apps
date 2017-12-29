@@ -4,7 +4,7 @@ Automatically deploy pull requests into [Flynn](https://flynn.io/) cluster. Hero
 
 ## Usage
 
-### Create pr-apps flynn app
+### Create Pr-Apps flynn app
 
 ```
 git clone https://github.com/featurist/flynn-pr-apps
@@ -50,32 +50,31 @@ scale:
 
 ## Development
 
-Needs some extra environment:
-
-`GH_REPO` github repo to deploy.
-`GH_USER_TOKEN` API token of the account that is able to pull code and create deployments on the above repo.
-
-```
-git clone https://github.com/featurist/flynn-pr-apps
-cd flynn-pr-apps
-nvm use
-yarn install
-yarn start
-```
+It doesn't make much sense to run Pr Apps locally (even though you could with `yarn start`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](#Create Pr-Apps flynn app) above).
 
 ## Testing
 
 Run core in-memory tests:
 
 ```
-yarn test
+yarn test-memory
 ```
 
-Run with everything real (git, github). Needs some extra environment:
+As above except with real fs, git, pr apps service and fake flynn service:
+
+```
+yarn test-local
+```
+
+As above except with actual github (remote + api). Needs some extra environment:
 
 `TEST_GH_REPO` existing github repo (with username/org) that will be used in tests to simulate user workflow.
 `TEST_GH_USER_TOKEN` API token of the account that can has access (create webhooks, pull code) to the above repo.
 
 ```
-DEBUG=pr-apps* yarn test-real
+yarn test-real
 ```
+
+Each of the above have `-debug` counterpart (e.g. `yarn test-local-debug`) that starts node debugging session.
+
+Finally, run all of the above with `yarn test`

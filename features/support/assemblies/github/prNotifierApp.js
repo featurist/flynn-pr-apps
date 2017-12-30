@@ -6,8 +6,8 @@ module.exports = function () {
 
   app.post('/deployments_test', ({body}, res) => {
     app.deploymentStatusEvents.push({
-      ref: body.deployment.ref,
-      state: body.deployment_status.state
+      branch: body.deployment.ref,
+      status: body.deployment_status.state
     })
     res.status(200).end()
   })

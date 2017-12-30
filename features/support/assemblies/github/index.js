@@ -1,7 +1,5 @@
 const {promisify} = require('util')
 const ngrok = require('ngrok')
-const retry = require('trytryagain')
-const {expect} = require('chai')
 const PrApps = require('../../../../lib/prApps')
 const GithubApiAdapter = require('../../../../lib/githubApiAdapter')
 const GitProject = require('../../../../lib/gitProject')
@@ -12,9 +10,9 @@ const createPrAppsApp = require('../../../..')
 const createPrNotifierApp = require('./prNotifierApp')
 const GithubService = require('./githubService')
 const GitRepo = require('./gitRepo')
-const HeadlessBrowser = require('./headlessBrowser')
 const FakeFlynnApi = require('./fakeFlynnApi')
 const getRandomPort = require('./getRandomPort')
+const ApiActorBase = require('../local/apiActorBase')
 
 module.exports = class GithubAssembly {
   async setup () {
@@ -71,7 +69,7 @@ module.exports = class GithubAssembly {
     this.codeHostingService = new GithubService({
       repo: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN,
-      prNotifier: this.prNotifierApp
+      prEventsListener: this.prNotifierApp
     })
 
     await Promise.all([
@@ -104,7 +102,7 @@ module.exports = class GithubAssembly {
   }
 
   createActor () {
-    return new ApiActor({
+    return new GithubActor({
       userLocalRepo: this.userLocalRepo,
       flynnService: this.flynnService,
       codeHostingService: this.codeHostingService
@@ -112,47 +110,18 @@ module.exports = class GithubAssembly {
   }
 }
 
-class ApiActor {
+class GithubActor extends ApiActorBase {
   constructor ({userLocalRepo, codeHostingService, flynnService}) {
+    super({userLocalRepo, flynnService, currentBranch: 'Feature1'})
     this.codeHostingService = codeHostingService
-    this.flynnService = flynnService
-    this.userLocalRepo = userLocalRepo
-    this.currentBranch = 'Feature1'
-  }
-
-  async start () {}
-
-  async stop () {}
-
-  async withExistingPrApp () {
-    await this.pushBranch()
-    await this.openPullRequest()
-    await this.createPrApp()
-    await this.followDeployedAppLink()
-    await this.shouldSeeNewApp()
-  }
-
-  async withClosedPullRequest () {
-    await this.pushBranch()
-    await this.openPullRequest()
-    await this.closePullRequest()
-  }
-
-  async pushBranch () {
-    await this.userLocalRepo.pushBranch(this.currentBranch, '<h1>Hello World!</h1>')
   }
 
   async openPullRequest () {
-    this.currentPrNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
+    this.prNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
   }
 
   async reopenPullRequest () {
-    this.currentPrNotifier = await this.codeHostingService.reopenPullRequest(this.currentPrNotifier.prNumber)
-  }
-
-  async createPrApp () {
-    const {gitUrl} = await this.flynnService.createApp(`pr-${this.currentPrNotifier.prNumber}`)
-    await this.userLocalRepo.pushCurrentBranchToFlynn(gitUrl)
+    this.prNotifier = await this.codeHostingService.reopenPullRequest(this.prNotifier.prNumber)
   }
 
   async pushMoreChanges () {
@@ -160,47 +129,10 @@ class ApiActor {
   }
 
   async mergePullRequest () {
-    await this.codeHostingService.mergePullRequest(this.currentPrNotifier.prNumber)
+    await this.codeHostingService.mergePullRequest(this.prNotifier.prNumber)
   }
 
   async closePullRequest () {
-    await this.codeHostingService.closePullRequest(this.currentPrNotifier.prNumber)
-  }
-
-  async shouldSeeDeployStarted () {
-    await this.currentPrNotifier.waitForDeployStarted()
-  }
-
-  async shouldSeeDeployFinished () {
-    await this.currentPrNotifier.waitForDeployFinished()
-  }
-
-  async shouldSeeDeploySuccessful () {
-    await this.currentPrNotifier.waitForDeploySuccessful()
-  }
-
-  async shouldSeeDeployFailed () {
-    await this.currentPrNotifier.waitForDeployFailed()
-  }
-
-  async followDeployedAppLink () {
-    const browser = new HeadlessBrowser()
-    const deployedAppUrl = `https://pr-${this.currentPrNotifier.prNumber}.${this.flynnService.clusterDomain}`
-    this.appIndexPageContent = await browser.visit(deployedAppUrl)
-  }
-
-  async shouldSeeNewApp () {
-    expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1>')
-  }
-
-  async shouldSeeUpdatedApp () {
-    expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1><p>This is Pr Apps</p>')
-  }
-
-  async shouldNotSeeApp () {
-    await retry(async () => {
-      await this.followDeployedAppLink()
-      expect(this.appIndexPageContent).to.eq('Pr App Not Found')
-    }, {timeout: 10000, interval: 500})
+    await this.codeHostingService.closePullRequest(this.prNotifier.prNumber)
   }
 }

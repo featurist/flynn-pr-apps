@@ -2,14 +2,15 @@ const retry = require('trytryagain')
 const {expect} = require('chai')
 
 module.exports = class PrNotifier {
-  constructor ({codeHostingServiceApi, branch}) {
-    this.codeHostingServiceApi = codeHostingServiceApi
+  constructor ({prEventsListener, branch, prNumber}) {
+    this.prEventsListener = prEventsListener
     this.branch = branch
+    this.prNumber = prNumber
   }
 
   async waitForDeployStarted () {
     await retry(() => {
-      const {branch, status} = this.codeHostingServiceApi.updateDeployStatusRequests[0]
+      const {branch, status} = this.prEventsListener.deploymentStatusEvents[0]
       expect(branch).to.eq(this.branch)
       expect(status).to.eq('pending')
     }, {timeout: 5000})
@@ -17,13 +18,13 @@ module.exports = class PrNotifier {
 
   async waitForDeployFinished () {
     await retry(() => {
-      expect(this.codeHostingServiceApi.updateDeployStatusRequests.length).to.eq(2)
+      expect(this.prEventsListener.deploymentStatusEvents.length).to.eq(2)
     }, {timeout: 5000})
   }
 
   async waitForDeploySuccessful () {
     await retry(() => {
-      const {branch, status} = this.codeHostingServiceApi.updateDeployStatusRequests[1]
+      const {branch, status} = this.prEventsListener.deploymentStatusEvents[1]
       expect(branch).to.eq(this.branch)
       expect(status).to.eq('success')
     }, {timeout: 5000})
@@ -31,7 +32,7 @@ module.exports = class PrNotifier {
 
   async waitForDeployFailed () {
     await retry(() => {
-      const {branch, status} = this.codeHostingServiceApi.updateDeployStatusRequests[1]
+      const {branch, status} = this.prEventsListener.deploymentStatusEvents[1]
       expect(branch).to.eq(this.branch)
       expect(status).to.eq('failure')
     }, {timeout: 5000})

@@ -1,7 +1,3 @@
-const httpism = require('httpism')
-const {expect} = require('chai')
-const retry = require('trytryagain')
-const crypto = require('crypto')
 const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
 const FsAdapter = require('../../../../lib/fsAdapter')
@@ -14,7 +10,8 @@ const FakeFlynnApi = require('../github/fakeFlynnApi')
 const CodeHostingServiceApiMemory = require('../memory/codeHostingServiceApiMemory')
 const getRandomPort = require('../github/getRandomPort')
 const PrNotifier = require('../memory/prNotifier')
-const HeadlessBrowser = require('../github/headlessBrowser')
+const ApiActorBase = require('./apiActorBase')
+const PrAppsWebClient = require('./prAppsWebClient')
 
 module.exports = class LocalAssembly {
   setup () {}
@@ -64,6 +61,7 @@ module.exports = class LocalAssembly {
     this.userLocalRepo = new GitRepo({remoteUrl})
 
     this.prAppsServer = this.prAppsApp.listen(this.prAppsPort)
+    this.prAppsClient = new PrAppsWebClient(`http://localhost:${this.prAppsPort}`, this.webhookSecret)
 
     await Promise.all([
       remoteRepoSh('git init --bare'),
@@ -85,59 +83,36 @@ module.exports = class LocalAssembly {
   }
 
   createGithubWebhooks () {
-    this.codeHostingServiceApi.resetRequestsLog()
+    this.prAppsClient.enable()
   }
 
   createActor () {
     return new LocalActor({
       userLocalRepo: this.userLocalRepo,
+      prAppsClient: this.prAppsClient,
       flynnService: this.flynnService,
-      codeHostingServiceApi: this.codeHostingServiceApi,
-      prAppsUrl: `http://localhost:${this.prAppsPort}`,
-      webhookSecret: this.webhookSecret
+      codeHostingServiceApi: this.codeHostingServiceApi
     })
   }
 }
 
-class LocalActor {
+class LocalActor extends ApiActorBase {
   constructor ({
-    prAppsUrl,
     flynnService,
     codeHostingServiceApi,
     userLocalRepo,
-    webhookSecret
+    prAppsClient
   }) {
-    this.userLocalRepo = userLocalRepo
+    super({userLocalRepo, flynnService, currentBranch: 'Feature1'})
+    this.prAppsClient = prAppsClient
     this.codeHostingServiceApi = codeHostingServiceApi
-    this.flynnService = flynnService
-
-    this.currentBranch = 'Feature1'
     this.prNumber = 23
 
     this.prNotifier = new PrNotifier({
-      codeHostingServiceApi,
-      branch: this.currentBranch
+      prEventsListener: codeHostingServiceApi,
+      branch: this.currentBranch,
+      prNumber: this.prNumber
     })
-
-    this.prAppsClient = httpism.client(prAppsUrl, {
-      headers: {'X-GitHub-Event': 'pull_request'}
-    }, [
-      function (req, next) {
-        const shasum = crypto.createHmac('sha1', webhookSecret)
-          .update(JSON.stringify(req.body))
-
-        req.headers['X-Hub-Signature'] = 'sha1=' + shasum.digest('hex')
-
-        return next()
-      }
-    ])
-  }
-
-  start () {}
-  stop () {}
-
-  async pushBranch () {
-    await this.userLocalRepo.pushBranch(this.currentBranch, '<h1>Hello World!</h1>')
   }
 
   async openPullRequest () {
@@ -192,26 +167,6 @@ class LocalActor {
     await this.prAppsClient.post('/webhook', body)
   }
 
-  async withExistingPrApp () {
-    await this.pushBranch()
-    await this.openPullRequest()
-    await this.createPrApp()
-    await this.shouldSeeDeployFinished()
-    await this.followDeployedAppLink()
-    await this.shouldSeeNewApp()
-  }
-
-  async withClosedPullRequest () {
-    await this.pushBranch()
-    await this.openPullRequest()
-    await this.closePullRequest()
-  }
-
-  async createPrApp () {
-    const {gitUrl} = await this.flynnService.createApp(`pr-${this.prNumber}`)
-    await this.userLocalRepo.pushCurrentBranchToFlynn(gitUrl)
-  }
-
   async pushMoreChanges () {
     await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
     const body = {
@@ -224,48 +179,5 @@ class LocalActor {
       }
     }
     await this.prAppsClient.post('/webhook', body)
-  }
-
-  async shouldSeeDeployStarted () {
-    await this.prNotifier.waitForDeployStarted()
-  }
-
-  async shouldSeeDeployFinished () {
-    await this.prNotifier.waitForDeployFinished()
-  }
-
-  async shouldSeeDeploySuccessful () {
-    await this.prNotifier.waitForDeploySuccessful()
-  }
-
-  async shouldSeeDeployFailed () {
-    await this.prNotifier.waitForDeployFailed()
-  }
-
-  async followDeployedAppLink () {
-    const browser = new HeadlessBrowser()
-    const deployedAppUrl = `https://pr-${this.prNumber}.${this.flynnService.clusterDomain}`
-    this.appIndexPageContent = await browser.visit(deployedAppUrl)
-  }
-
-  async shouldSeeNewApp () {
-    await retry(async () => {
-      await this.followDeployedAppLink()
-      expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1>')
-    })
-  }
-
-  async shouldSeeUpdatedApp () {
-    await retry(async () => {
-      await this.followDeployedAppLink()
-      expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1><p>This is Pr Apps</p>')
-    })
-  }
-
-  async shouldNotSeeApp () {
-    await retry(async () => {
-      await this.followDeployedAppLink()
-      expect(this.appIndexPageContent).to.eq('Pr App Not Found')
-    }, {timeout: 10000, interval: 500})
   }
 }

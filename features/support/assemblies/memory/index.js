@@ -29,12 +29,12 @@ module.exports = class MemoryAssembly {
       }),
       flynnService: this.flynnService
     })
-    const prAppsClient = new PrAppsClientMemory({prApps})
-    return new MemoryActor({prApps, prAppsClient, flynnService: this.flynnService})
+    this.prAppsClient = new PrAppsClientMemory({prApps})
+    return new MemoryActor({prApps, prAppsClient: this.prAppsClient, flynnService: this.flynnService})
   }
 
   createGithubWebhooks () {
-    this.codeHostingServiceApi.resetRequestsLog()
+    this.prAppsClient.enable()
   }
 }
 

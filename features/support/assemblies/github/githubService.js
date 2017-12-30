@@ -1,17 +1,16 @@
 const GitHubApi = require('github')
-const retry = require('trytryagain')
-const {expect} = require('chai')
 const GithubUrl = require('../../../../lib/githubUrl')
+const PrNotifier = require('../memory/prNotifier')
 
 module.exports = class GithubService {
-  constructor ({prNotifier, repo, token}) {
+  constructor ({prEventsListener, repo, token}) {
     ({owner: this.owner, repo: this.repo} = new GithubUrl({repoUrl: repo, token}))
     this.ghApi = new GitHubApi()
     this.ghApi.authenticate({
       type: 'token',
       token
     })
-    this.prNotifier = prNotifier
+    this.prEventsListener = prEventsListener
   }
 
   async createWebhook (url, events, secret) {
@@ -84,7 +83,11 @@ module.exports = class GithubService {
       head: branch,
       base: 'master'
     })
-    return new CurrentPrNotifier({prNotifier: this.prNotifier, pr})
+    return new PrNotifier({
+      prEventsListener: this.prEventsListener,
+      prNumber: pr.number,
+      branch: pr.head.ref
+    })
   }
 
   async mergePullRequest (prNumber) {
@@ -111,50 +114,10 @@ module.exports = class GithubService {
       number: prNumber,
       state: 'open'
     })
-    return new CurrentPrNotifier({prNotifier: this.prNotifier, pr})
-  }
-}
-
-class CurrentPrNotifier {
-  constructor ({prNotifier, pr}) {
-    this.prNotifier = prNotifier
-    this.pr = pr
-    this.prNumber = pr.number
-  }
-
-  async waitForDeployStarted () {
-    await retry(() => {
-      const currentDeploymentStatus = this.prNotifier.deploymentStatusEvents[0]
-      expect(currentDeploymentStatus).to.eql({
-        ref: this.pr.head.ref,
-        state: 'pending'
-      })
-    }, {timeout: 10000})
-  }
-
-  async waitForDeployFinished () {
-    await retry(async () => {
-      expect(this.prNotifier.deploymentStatusEvents.length).to.eq(2)
-    }, {timeout: 10000})
-  }
-
-  async waitForDeploySuccessful () {
-    await retry(async () => {
-      const currentDeploymentStatus = this.prNotifier.deploymentStatusEvents[1]
-      expect(currentDeploymentStatus).to.eql({
-        ref: this.pr.head.ref,
-        state: 'success'
-      })
-    }, {timeout: 10000})
-  }
-
-  async waitForDeployFailed () {
-    await retry(async () => {
-      const currentDeploymentStatus = this.prNotifier.deploymentStatusEvents[1]
-      expect(currentDeploymentStatus).to.eql({
-        ref: this.pr.head.ref,
-        state: 'failure'
-      })
-    }, {timeout: 10000})
+    return new PrNotifier({
+      prEventsListener: this.prEventsListener,
+      prNumber: pr.number,
+      branch: pr.head.ref
+    })
   }
 }

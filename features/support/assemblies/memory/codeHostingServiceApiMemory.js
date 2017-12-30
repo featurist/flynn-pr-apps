@@ -2,7 +2,7 @@ const debug = require('debug')('pr-apps:codeHostingServiceApiMemory')
 
 module.exports = class CodeHostingServiceApiMemory {
   constructor () {
-    this.updateDeployStatusRequests = []
+    this.deploymentStatusEvents = []
   }
 
   async createDeployment (branch) {
@@ -10,11 +10,6 @@ module.exports = class CodeHostingServiceApiMemory {
     return {
       branch
     }
-  }
-
-  resetRequestsLog () {
-    debug('Resetting requests log')
-    this.updateDeployStatusRequests = []
   }
 
   async updateDeploymentStatus (deployment, status, {deployedAppUrl, flynnAppUrl}) {
@@ -25,6 +20,6 @@ module.exports = class CodeHostingServiceApiMemory {
       flynnAppUrl
     }
     debug('Updating deployment status %o', update)
-    this.updateDeployStatusRequests.push(update)
+    this.deploymentStatusEvents.push(update)
   }
 }

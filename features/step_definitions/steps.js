@@ -1,7 +1,7 @@
 const { Given, When, Then } = require('cucumber')
 
 Given('{actor} pushed a branch to a code hosting service', async function (actor) {
-  await this.assembly.createGithubWebhooks()
+  await this.assembly.enablePrEvents()
   await actor.pushBranch()
 })
 
@@ -14,7 +14,7 @@ Then('{actor} should see that deploy of a pr app has started', async function (a
 })
 
 Given('the deploy of {actor}\'s new pr app has started', async function (actor) {
-  await this.assembly.createGithubWebhooks()
+  await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
   this.currentActor = actor
@@ -29,7 +29,7 @@ Then('{actor} sees that the deploy is complete', async function (actor) {
 })
 
 Given('{actor} received a notification that his pr app deploy is complete', async function (actor) {
-  await this.assembly.createGithubWebhooks()
+  await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
   await actor.shouldSeeDeploySuccessful()
@@ -45,7 +45,7 @@ Then('{actor} sees the new app', async function (actor) {
 
 Given('{actor} has a pr app', async function (actor) {
   await actor.withExistingPrApp()
-  await this.assembly.createGithubWebhooks()
+  await this.assembly.enablePrEvents()
 })
 
 When('{actor} pushes changes to the pr branch', async function (actor) {
@@ -54,7 +54,7 @@ When('{actor} pushes changes to the pr branch', async function (actor) {
 
 Given('the deploy of the update of {actor}\'s pr app has started', async function (actor) {
   await actor.withExistingPrApp()
-  await this.assembly.createGithubWebhooks()
+  await this.assembly.enablePrEvents()
 
   await actor.pushMoreChanges()
   this.currentActor = actor
@@ -62,7 +62,7 @@ Given('the deploy of the update of {actor}\'s pr app has started', async functio
 
 Given('{actor} received a notification that his app is updated', async function (actor) {
   await actor.withExistingPrApp()
-  await this.assembly.createGithubWebhooks()
+  await this.assembly.enablePrEvents()
 
   await actor.pushMoreChanges()
   await actor.shouldSeeDeploySuccessful()
@@ -86,7 +86,7 @@ When('{actor} merges that app\'s pr', async function (actor) {
 
 Given('{actor} has a closed pull request', async function (actor) {
   await actor.withClosedPullRequest()
-  await this.assembly.createGithubWebhooks()
+  await this.assembly.enablePrEvents()
 })
 
 When('{actor} reopens that pull request', async function (actor) {
@@ -95,7 +95,7 @@ When('{actor} reopens that pull request', async function (actor) {
 
 Given('the deploy of {actor}\'s broken pr app has started', async function (actor) {
   this.assembly.fakeFlynnApi.failNextDeploy()
-  await this.assembly.createGithubWebhooks()
+  await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
   this.currentActor = actor

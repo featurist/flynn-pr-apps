@@ -82,7 +82,7 @@ module.exports = class LocalAssembly {
     ])
   }
 
-  createGithubWebhooks () {
+  enablePrEvents () {
     this.prAppsClient.enable()
   }
 

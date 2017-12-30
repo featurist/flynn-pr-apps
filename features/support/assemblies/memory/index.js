@@ -33,7 +33,7 @@ module.exports = class MemoryAssembly {
     return new MemoryActor({prApps, prAppsClient: this.prAppsClient, flynnService: this.flynnService})
   }
 
-  createGithubWebhooks () {
+  enablePrEvents () {
     this.prAppsClient.enable()
   }
 }

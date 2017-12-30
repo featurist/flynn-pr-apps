@@ -29,7 +29,7 @@ module.exports = class GithubAssembly {
       git
     })
 
-    const codeHostingServiceApi = new GithubApiAdapter({
+    this.codeHostingServiceApi = new GithubApiAdapter({
       repo: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN
     })
@@ -47,7 +47,7 @@ module.exports = class GithubAssembly {
     })
 
     const prApps = new PrApps({
-      codeHostingServiceApi,
+      codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
       flynnService: this.flynnService
     })
@@ -82,6 +82,7 @@ module.exports = class GithubAssembly {
   }
 
   async stop () {
+    this.codeHostingServiceApi.disable()
     await Promise.all([
       this.userLocalRepo.destroy(),
       this.fakeFlynnApi.stop(),
@@ -94,7 +95,7 @@ module.exports = class GithubAssembly {
     ])
   }
 
-  createGithubWebhooks () {
+  enablePrEvents () {
     return Promise.all([
       this.codeHostingService.createWebhook(`${this.prAppsHost}/webhook`, ['pull_request'], this.webhookSecret),
       this.codeHostingService.createWebhook(`${this.prAppsHost}/deployments_test`, ['deployment_status'])

@@ -1,6 +1,7 @@
 const retry = require('trytryagain')
 const {expect} = require('chai')
 const HeadlessBrowser = require('../github/headlessBrowser')
+const retryTimeout = require('../../retryTimeout')
 
 module.exports = class ApiActorBase {
   constructor ({
@@ -73,6 +74,6 @@ module.exports = class ApiActorBase {
     await retry(async () => {
       await this.followDeployedAppLink()
       expect(this.appIndexPageContent).to.eq('Pr App Not Found')
-    }, {timeout: 10000, interval: 500})
+    }, {timeout: retryTimeout, interval: 500})
   }
 }

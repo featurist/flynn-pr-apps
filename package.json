@@ -18,7 +18,7 @@
   },
   "scripts": {
     "start": "nf start",
-    "test": "yarn test-memory && yarn test-local && yarn test-real",
+    "test": "yarn standard && yarn test-memory && yarn test-local && yarn test-real",
     "test-memory": "yarn cucumber",
     "test-memory-debug": "yarn cucumber-debug",
     "test-local": "CUCUMBER_ASSEMBLY=local yarn cucumber",
@@ -26,7 +26,8 @@
     "test-real": "CUCUMBER_ASSEMBLY=github yarn cucumber features/{deployPullRequest,destroyApp}.feature",
     "test-real-debug": "CUCUMBER_ASSEMBLY=github yarn cucumber-debug features/{deployPullRequest,destroyApp}.feature",
     "cucumber": "DEBUG=pr-apps* cucumberjs --backtrace",
-    "cucumber-debug": "node --inspect-brk ./node_modules/.bin/cucumber.js"
+    "cucumber-debug": "node --inspect-brk ./node_modules/.bin/cucumber.js",
+    "standard": "standard $(git ls-files | grep -e '.js$')"
   },
   "devDependencies": {
     "basicauth-middleware": "^3.0.0",

@@ -11,26 +11,30 @@ module.exports = class GitRepo {
   }
 
   async create () {
-    this.tmpDir = this.fs.makeTempDir()
-    this.sh = new ShellAdapter({cwd: this.tmpDir})
+    this.path = this.fs.makeTempDir()
+    this.sh = new ShellAdapter({cwd: this.path})
 
     await this.sh('git init')
     await this.sh('git config --add user.name pr-apps')
     await this.sh('git config --add user.email pr-apps@pr-apps.pr')
-
-    fs.writeFileSync(`${this.tmpDir}/readme.md`, '# Pr Apps test repo')
-    await this.sh('git add .')
-    await this.sh('git commit -m "init"')
     await this.sh(`git remote add origin ${this.remoteUrl}`)
-    await this.sh('git push -f origin master')
+
+    await this.addFile('readme.md', '# Pr Apps test repo')
   }
 
   destroy () {
-    this.fs.rmRf(this.tmpDir)
+    this.fs.rmRf(this.path)
+  }
+
+  async addFile (path, content) {
+    fs.writeFileSync(`${this.path}/${path}`, content)
+    await this.sh('git add .')
+    await this.sh(`git commit -m "add ${path}"`)
+    await this.sh('git push -f origin master')
   }
 
   async pushBranch (branch, content) {
-    const index = path.join(this.tmpDir, 'index.html')
+    const index = path.join(this.path, 'index.html')
 
     if (this.currentBranch === branch) {
       fs.appendFileSync(index, content)

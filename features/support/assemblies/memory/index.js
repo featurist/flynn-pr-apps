@@ -1,3 +1,4 @@
+const yaml = require('js-yaml')
 const {expect} = require('chai')
 const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
@@ -5,6 +6,7 @@ const FlynnServiceMemory = require('./flynnServiceMemory')
 const CodeHostingServiceApiMemory = require('./codeHostingServiceApiMemory')
 const PrAppsClientMemory = require('./prAppsClientMemory')
 const GitMemory = require('./gitMemory')
+const ConfigLoaderMemory = require('./configLoaderMemory')
 
 module.exports = class MemoryAssembly {
   async setup () {}
@@ -20,6 +22,8 @@ module.exports = class MemoryAssembly {
   createActor () {
     this.flynnService = new FlynnServiceMemory('prs.example.com')
     this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
+    const configLoader = new ConfigLoaderMemory()
+
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject: new GitProject({
@@ -27,10 +31,16 @@ module.exports = class MemoryAssembly {
         remoteUrl: 'https://github.com/asdfsd/bbbb.git',
         git: new GitMemory(this.fakeFlynnApi)
       }),
-      flynnService: this.flynnService
+      flynnService: this.flynnService,
+      configLoader
     })
     this.prAppsClient = new PrAppsClientMemory({prApps})
-    return new MemoryActor({prApps, prAppsClient: this.prAppsClient, flynnService: this.flynnService})
+
+    return new MemoryActor({
+      prAppsClient: this.prAppsClient,
+      flynnService: this.flynnService,
+      configLoader
+    })
   }
 
   enablePrEvents () {
@@ -39,10 +49,10 @@ module.exports = class MemoryAssembly {
 }
 
 class MemoryActor {
-  constructor ({prApps, prAppsClient, flynnService}) {
-    this.prApps = prApps
+  constructor ({prAppsClient, flynnService, configLoader}) {
     this.flynnService = flynnService
     this.prAppsClient = prAppsClient
+    this.configLoader = configLoader
     this.currentBranch = 'Feature1'
     this.prNumber = 23
   }
@@ -101,5 +111,13 @@ class MemoryActor {
   shouldSeeUpdatedApp () {}
   shouldNotSeeApp () {
     expect(this.flynnService.destroyPrAppRequests).to.eql([`pr-${this.prNumber}`])
+  }
+
+  addPrAppConfig (config) {
+    this.configLoader.setConfig(yaml.safeLoad(config))
+  }
+
+  assertEnvironmentSet (config) {
+    expect(this.flynnService.proposedConfig).to.eql(config)
   }
 }

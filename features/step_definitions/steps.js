@@ -108,3 +108,32 @@ When('the deploy fails', async function () {
 Then('{actor} sees that the deploy failed', async function (actor) {
   await actor.shouldSeeDeployFailed()
 })
+
+Given('{actor}\'s app needs environment variables {string} and {string}', function (actor, envVar1, envVar2) {
+  this.envVars = [envVar1, envVar2].map(pair => {
+    return pair.split('=')
+  }).reduce((result, [key, value]) => {
+    result[key] = isNaN(value) ? value : Number(value)
+    return result
+  }, {})
+})
+
+When('{actor} adds configuration file specifying extra environment', async function (actor) {
+  const content = `
+env:
+  ${Object.entries(this.envVars).map(([key, val]) => `${key}: ${val}`).join('\n  ')}
+  `
+  await actor.addPrAppConfig(content)
+})
+
+When('{actor} opens a new pull request', async function (actor) {
+  await this.assembly.enablePrEvents()
+  await actor.pushBranch()
+  await actor.openPullRequest()
+})
+
+Then('{actor}\'s pr app has those environment variables set', async function (actor) {
+  await actor.assertEnvironmentSet({
+    env: this.envVars
+  })
+})

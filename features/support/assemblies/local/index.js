@@ -1,9 +1,13 @@
+const {expect} = require('chai')
+const retry = require('trytryagain')
+const retryTimeout = require('../../retryTimeout')
 const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
 const FsAdapter = require('../../../../lib/fsAdapter')
 const GitAdapter = require('../../../../lib/gitAdapter')
 const FlynnService = require('../../../../lib/flynnService')
 const ShellAdapter = require('../../../../lib/shellAdapter')
+const ConfigLoader = require('../../../../lib/configLoader')
 const createPrAppsApp = require('../../../..')
 const GitRepo = require('../github/gitRepo')
 const FakeFlynnApi = require('../github/fakeFlynnApi')
@@ -50,7 +54,8 @@ module.exports = class LocalAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      flynnService: this.flynnService
+      flynnService: this.flynnService,
+      configLoader: new ConfigLoader()
     })
     this.webhookSecret = 'webhook secret'
     this.prAppsApp = createPrAppsApp({
@@ -91,7 +96,8 @@ module.exports = class LocalAssembly {
       userLocalRepo: this.userLocalRepo,
       prAppsClient: this.prAppsClient,
       flynnService: this.flynnService,
-      codeHostingServiceApi: this.codeHostingServiceApi
+      codeHostingServiceApi: this.codeHostingServiceApi,
+      fakeFlynnApi: this.fakeFlynnApi
     })
   }
 }
@@ -101,11 +107,13 @@ class LocalActor extends ApiActorBase {
     flynnService,
     codeHostingServiceApi,
     userLocalRepo,
-    prAppsClient
+    prAppsClient,
+    fakeFlynnApi
   }) {
     super({userLocalRepo, flynnService, currentBranch: 'Feature1'})
     this.prAppsClient = prAppsClient
     this.codeHostingServiceApi = codeHostingServiceApi
+    this.fakeFlynnApi = fakeFlynnApi
     this.prNumber = 23
 
     this.prNotifier = new PrNotifier({
@@ -179,5 +187,18 @@ class LocalActor extends ApiActorBase {
       }
     }
     await this.prAppsClient.post('/webhook', body)
+  }
+
+  async addPrAppConfig (config) {
+    await this.userLocalRepo.addFile('pr-app.yaml', config)
+  }
+
+  async assertEnvironmentSet (config) {
+    await retry(() => {
+      expect(this.fakeFlynnApi.deploys).to.eql([{
+        appName: `pr-${this.prNumber}`,
+        release: config
+      }])
+    }, {timeout: retryTimeout})
   }
 }

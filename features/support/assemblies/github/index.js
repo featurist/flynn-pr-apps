@@ -6,6 +6,7 @@ const GitProject = require('../../../../lib/gitProject')
 const FsAdapter = require('../../../../lib/fsAdapter')
 const GitAdapter = require('../../../../lib/gitAdapter')
 const FlynnService = require('../../../../lib/flynnService')
+const ConfigLoader = require('../../../../lib/configLoader')
 const createPrAppsApp = require('../../../..')
 const createPrNotifierApp = require('./prNotifierApp')
 const GithubService = require('./githubService')
@@ -49,7 +50,8 @@ module.exports = class GithubAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      flynnService: this.flynnService
+      flynnService: this.flynnService,
+      configLoader: new ConfigLoader()
     })
     this.webhookSecret = 'webhook secret'
     this.prAppsApp = createPrAppsApp({

@@ -26,6 +26,8 @@ module.exports = class FakeFlynnApi {
     this.authKey = authKey
     this.port = port
     this.apps = {}
+    this.releases = {}
+    this.deploys = []
     this.fs = new FsAdapter()
   }
 
@@ -50,12 +52,12 @@ module.exports = class FakeFlynnApi {
     flynnController.use(bodyParser.json())
     flynnController.use(basicAuth)
 
-    let appId = 1
+    let appId = 10
     flynnController.post('/apps', (req, res) => {
       this._createAppRepo(req.body.name).then(() => {
         debug('Creating app %s', req.body.name)
-        this.apps[appId++] = req.body.name
-        res.status(201).end()
+        this.apps[++appId] = req.body.name
+        res.status(201).send({id: appId})
       }).catch(e => {
         console.error(e.stack)
         res.status(500).end()
@@ -72,7 +74,7 @@ module.exports = class FakeFlynnApi {
       res.send(apps)
     })
 
-    flynnController.delete('/apps/:appId', async (req, res) => {
+    flynnController.delete('/apps/:appId', (req, res) => {
       try {
         const appName = this.apps[req.params.appId]
         debug('Destroying app %s', appName)
@@ -84,6 +86,24 @@ module.exports = class FakeFlynnApi {
         console.error(e.stack)
         res.status(500).end()
       }
+    })
+
+    flynnController.get('/apps/:appId/release', (req, res) => {
+      res.status(404).end()
+    })
+
+    let releaseId = 20
+    flynnController.post('/releases', (req, res) => {
+      this.releases[++releaseId] = req.body
+      res.status(201).send({id: releaseId})
+    })
+
+    flynnController.post('/apps/:appId/deploy', (req, res) => {
+      this.deploys.push({
+        appName: this.apps[Number(req.params.appId)],
+        release: this.releases[req.body.id]
+      })
+      res.status(201).end()
     })
 
     const flynnGitReceive = createFlynnGitReceiveApp({

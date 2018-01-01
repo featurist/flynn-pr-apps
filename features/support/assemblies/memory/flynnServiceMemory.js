@@ -5,12 +5,7 @@ module.exports = class FlynnServiceMemory {
   }
 
   createApp (appName) {
-    this.lastDeployedAppUrl = `https://${appName}.${this.clusterUrl}`
-    this.lastFlynnAppUrl = `https://dashboard.${this.clusterUrl}/apps/${appName}`
-    return {
-      webUrl: this.lastDeployedAppUrl,
-      flynnUrl: this.lastFlynnAppUrl
-    }
+    return this._makeApp(appName)
   }
 
   destroyApp (appName) {
@@ -18,11 +13,18 @@ module.exports = class FlynnServiceMemory {
   }
 
   getApp (appName) {
+    return this._makeApp(appName)
+  }
+
+  _makeApp (appName) {
     this.lastDeployedAppUrl = `https://${appName}.${this.clusterUrl}`
     this.lastFlynnAppUrl = `https://dashboard.${this.clusterUrl}/apps/${appName}`
     return {
       webUrl: `https://${appName}.${this.clusterUrl}`,
-      flynnUrl: this.lastFlynnAppUrl
+      flynnUrl: this.lastFlynnAppUrl,
+      ensureConfig: ({env} = {}) => {
+        this.proposedConfig = {env}
+      }
     }
   }
 }

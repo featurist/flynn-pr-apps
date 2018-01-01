@@ -1,5 +1,5 @@
 {
-  "name": "pr-apps",
+  "name": "flynn-pr-apps",
   "version": "1.0.0",
   "author": "artemave <artemave@gmail.com>",
   "license": "MIT",
@@ -13,6 +13,7 @@
     "express": "^4.16.2",
     "github": "^12.1.0",
     "httpism": "^3.8.0",
+    "js-yaml": "^3.10.0",
     "morgan": "^1.9.0"
   },
   "scripts": {
@@ -22,8 +23,8 @@
     "test-memory-debug": "yarn cucumber-debug",
     "test-local": "CUCUMBER_ASSEMBLY=local yarn cucumber",
     "test-local-debug": "CUCUMBER_ASSEMBLY=local yarn cucumber-debug",
-    "test-real": "CUCUMBER_ASSEMBLY=github yarn cucumber",
-    "test-real-debug": "CUCUMBER_ASSEMBLY=github yarn cucumber-debug",
+    "test-real": "CUCUMBER_ASSEMBLY=github yarn cucumber features/{deployPullRequest,destroyApp}.feature",
+    "test-real-debug": "CUCUMBER_ASSEMBLY=github yarn cucumber-debug features/{deployPullRequest,destroyApp}.feature",
     "cucumber": "DEBUG=pr-apps* cucumberjs --backtrace",
     "cucumber-debug": "node --inspect-brk ./node_modules/.bin/cucumber.js"
   },

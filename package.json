@@ -17,19 +17,6 @@
     "lowscore": "^1.17.0",
     "morgan": "^1.9.0"
   },
-  "scripts": {
-    "start": "nf start",
-    "test": "yarn standard && yarn test-memory && yarn test-local && yarn test-real",
-    "test-memory": "yarn cucumber",
-    "test-memory-debug": "yarn cucumber-debug",
-    "test-local": "CUCUMBER_ASSEMBLY=local yarn cucumber",
-    "test-local-debug": "CUCUMBER_ASSEMBLY=local yarn cucumber-debug",
-    "test-real": "CUCUMBER_ASSEMBLY=github yarn cucumber features/{deployPullRequest,destroyApp}.feature",
-    "test-real-debug": "CUCUMBER_ASSEMBLY=github yarn cucumber-debug features/{deployPullRequest,destroyApp}.feature",
-    "cucumber": "DEBUG=pr-apps* cucumberjs --backtrace",
-    "cucumber-debug": "node --inspect-brk ./node_modules/.bin/cucumber.js",
-    "standard": "standard $(git ls-files | grep -e '.js$')"
-  },
   "devDependencies": {
     "basicauth-middleware": "^3.0.0",
     "chai": "^4.1.2",

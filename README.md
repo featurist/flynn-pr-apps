@@ -49,20 +49,20 @@ Route key (`api-web` in the example above) refers to a service name in your `Pro
 
 ## Development
 
-It doesn't make much sense to run Pr Apps locally (even though you could with `yarn start`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](#Create Pr-Apps flynn app) above).
+It doesn't make much sense to run Pr Apps locally (even though you could with `make start`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](#Create Pr-Apps flynn app) above).
 
 ## Testing
 
 Run core in-memory tests:
 
 ```
-yarn test-memory
+make test-memory
 ```
 
 As above except with real fs, git, pr apps service and fake flynn service:
 
 ```
-yarn test-local
+make test-local
 ```
 
 As above except with actual github (remote + api). Needs some extra environment:
@@ -71,9 +71,9 @@ As above except with actual github (remote + api). Needs some extra environment:
 `TEST_GH_USER_TOKEN` API token of the account that can has access (create webhooks, pull code) to the above repo.
 
 ```
-yarn test-real
+make test-real
 ```
 
-Each of the above have `-debug` counterpart (e.g. `yarn test-local-debug`) that starts node debugging session.
+Each of the above have `-debug` counterpart (e.g. `make test-local-debug`) that starts node debugging session.
 
-Finally, run all of the above with `yarn test`
+Finally, run all of the above with `make test`

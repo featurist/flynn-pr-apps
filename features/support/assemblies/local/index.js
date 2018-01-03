@@ -228,4 +228,8 @@ class LocalActor extends ApiActorBase {
       ])
     })
   }
+
+  shouldNotSeeFlynnApp () {
+    expect(Object.keys(this.fakeFlynnApi.apps).length).to.eq(0)
+  }
 }

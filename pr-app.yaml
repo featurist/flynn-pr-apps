@@ -1,0 +1,8 @@
+env:
+  FOO: bar
+  STUFF_URL: "https://stuff-${APP_DOMAIN}"
+resources:
+  - redis
+  - postgres
+routes:
+  web: "stuff-${APP_DOMAIN}"

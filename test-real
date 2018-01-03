@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+. ./scripts/test_commands.sh
+CUCUMBER_ASSEMBLY=github cucumber_normal --tags 'not @localOnly' "$@"

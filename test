@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+set -e
+PATH=node_modules/.bin:$PATH
+
+standard $(git ls-files | grep -e '.js$')
+./test-memory
+./test-local
+./test-real

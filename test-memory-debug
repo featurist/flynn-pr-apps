@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+. ./scripts/test_commands.sh
+cucumber_debug "$@"

@@ -125,4 +125,8 @@ class MemoryActor {
   assertServiceIsUp ({service, domain}) {
     expect(this.flynnService.proposedRoutes[service]).to.eql(domain)
   }
+
+  assertResources (resources) {
+    expect(this.flynnService.proposedResources.sort()).to.eql(resources.sort())
+  }
 }

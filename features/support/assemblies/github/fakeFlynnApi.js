@@ -97,8 +97,9 @@ module.exports = class FakeFlynnApi {
       }
     })
 
+    this.release = {env: {}}
     flynnController.post('/releases', (req, res) => {
-      this.release = req.body
+      Object.assign(this.release.env, req.body.env)
       res.status(201).send({id: releaseId})
     })
 
@@ -124,6 +125,21 @@ module.exports = class FakeFlynnApi {
     flynnController.put('/apps/:appId/scale/:releaseId', (req, res) => {
       this.scale = req.body.new_processes
       res.status(200).end()
+    })
+
+    flynnController.get('/apps/:appId/resources', (req, res) => {
+      res.send([])
+    })
+
+    this.resources = []
+    flynnController.post('/providers/:provider/resources', (req, res) => {
+      const provider = req.params.provider
+      Object.assign(this.release.env, {[`${provider.toUpperCase()}_URL`]: `${provider}://stuff`})
+      this.resources.push({
+        resource: req.params.provider,
+        apps: req.body.apps.map(id => this.apps[Number(id)])
+      })
+      res.status(201).end()
     })
 
     const flynnGitReceive = createFlynnGitReceiveApp({

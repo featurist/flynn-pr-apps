@@ -164,3 +164,29 @@ Then('{actor}\'s main service can reach the microservice', async function (actor
     })
   ])
 })
+
+Given('{actor}\'s app needs postgres and redis', function (actor) {
+})
+
+When('{actor} adds configuration file specifying postgres and redis resources', async function (actor) {
+  const content = `
+env:
+  FOO: bar
+resources:
+  - redis
+  - postgres
+  `
+
+  await actor.addPrAppConfig(content)
+})
+
+Then('{actor}\'s pr app has postgres and redis', async function (actor) {
+  await Promise.all([
+    actor.assertEnvironmentSet({
+      FOO: 'bar',
+      REDIS_URL: 'redis://stuff',
+      POSTGRES_URL: 'postgres://stuff'
+    }),
+    actor.assertResources(['redis', 'postgres'])
+  ])
+})

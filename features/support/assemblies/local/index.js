@@ -217,4 +217,14 @@ class LocalActor extends ApiActorBase {
       })
     })
   }
+
+  async assertResources (resources) {
+    await retry(() => {
+      expect(this.fakeFlynnApi.resources.map(r => r.resource).sort()).to.eql(resources.sort())
+      expect(this.fakeFlynnApi.resources.map(r => r.apps).sort()).to.eql([
+        [`pr-${this.prNumber}`],
+        [`pr-${this.prNumber}`]
+      ])
+    })
+  }
 }

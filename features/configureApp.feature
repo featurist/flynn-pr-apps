@@ -13,3 +13,9 @@ Feature: Configure Pr App environment, resources, routes, etc.
     And Frank also sets an environment variable for the main service to address the microservice
     And Frank opens a new pull request
     Then Frank's main service can reach the microservice
+
+  Scenario: Add resources to new pr app
+    Given Frank's app needs postgres and redis
+    When Frank adds configuration file specifying postgres and redis resources
+    And Frank opens a new pull request
+    Then Frank's pr app has postgres and redis

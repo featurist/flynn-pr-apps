@@ -23,9 +23,14 @@ module.exports = class FlynnServiceMemory {
       webUrl: `https://${appName}.${this.clusterDomain}`,
       flynnUrl: this.lastFlynnAppUrl,
       appDomain: `${appName}.${this.clusterDomain}`,
-      withConfig: ({env, routes} = {}) => {
-        this.proposedEnv = env
+      withConfig: ({env, routes, resources = []} = {}) => {
+        const resourcesEnv = resources.reduce((result, resource) => {
+          result[`${resource.toUpperCase()}_URL`] = `${resource}://stuff`
+          return result
+        }, {})
+        this.proposedEnv = Object.assign({}, resourcesEnv, env)
         this.proposedRoutes = routes
+        this.proposedResources = resources
       }
     }
   }

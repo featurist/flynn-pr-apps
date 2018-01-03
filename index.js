@@ -9,6 +9,7 @@ const GitProject = require('./lib/gitProject')
 const FlynnService = require('./lib/flynnService')
 const FsAdapter = require('./lib/fsAdapter')
 const GitAdapter = require('./lib/gitAdapter')
+const ConfigLoader = require('./lib/configLoader')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -121,7 +122,8 @@ if (!module.parent) {
   const prApps = new PrApps({
     codeHostingServiceApi,
     scmProject,
-    flynnService
+    flynnService,
+    configLoader: new ConfigLoader()
   })
   const port = process.env.PORT
   module.exports({prApps, webhookSecret: process.env.WEBHOOK_SECRET}).listen(port, function () {

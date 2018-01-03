@@ -133,7 +133,34 @@ When('{actor} opens a new pull request', async function (actor) {
 })
 
 Then('{actor}\'s pr app has those environment variables set', async function (actor) {
-  await actor.assertEnvironmentSet({
-    env: this.envVars
-  })
+  await actor.assertEnvironmentSet(this.envVars)
+})
+
+Given('{actor}\'s app has a microservice that needs to be accessible from the main service', function (actor) {
+})
+
+When('{actor} adds configuration file specifying a route to the microservice', async function (actor) {
+  const content = `
+env:
+  API_URL: "https://api-\${APP_DOMAIN}"
+routes:
+  api-web: "api-\${APP_DOMAIN}"
+  `
+
+  await actor.addPrAppConfig(content)
+})
+
+When('{actor} also sets an environment variable for the main service to address the microservice', function (actor) {
+})
+
+Then('{actor}\'s main service can reach the microservice', async function (actor) {
+  await Promise.all([
+    actor.assertEnvironmentSet({
+      API_URL: `https://api-pr-${actor.prNumber}.${this.assembly.clusterDomain}`
+    }),
+    actor.assertServiceIsUp({
+      service: 'api-web',
+      domain: `api-pr-${actor.prNumber}.${this.assembly.clusterDomain}`
+    })
+  ])
 })

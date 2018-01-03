@@ -2124,6 +2124,10 @@ lowercase-keys@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/lowercase-keys/-/lowercase-keys-1.0.0.tgz#4e3366b39e7f5457e35f1324bdf6f88d0bfc7306"
 
+lowscore@^1.17.0:
+  version "1.17.0"
+  resolved "https://registry.yarnpkg.com/lowscore/-/lowscore-1.17.0.tgz#74f34c742b011372d993ce21f0b5d97d6216cab2"
+
 lru-cache@^4.0.1:
   version "4.1.1"
   resolved "https://registry.yarnpkg.com/lru-cache/-/lru-cache-4.1.1.tgz#622e32e82488b49279114a4f9ecf45e7cd6bba55"

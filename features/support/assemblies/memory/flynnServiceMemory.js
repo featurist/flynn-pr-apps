@@ -1,6 +1,6 @@
 module.exports = class FlynnServiceMemory {
-  constructor (clusterUrl) {
-    this.clusterUrl = clusterUrl
+  constructor (clusterDomain) {
+    this.clusterDomain = clusterDomain
     this.destroyPrAppRequests = []
   }
 
@@ -17,13 +17,15 @@ module.exports = class FlynnServiceMemory {
   }
 
   _makeApp (appName) {
-    this.lastDeployedAppUrl = `https://${appName}.${this.clusterUrl}`
-    this.lastFlynnAppUrl = `https://dashboard.${this.clusterUrl}/apps/${appName}`
+    this.lastDeployedAppUrl = `https://${appName}.${this.clusterDomain}`
+    this.lastFlynnAppUrl = `https://dashboard.${this.clusterDomain}/apps/${appName}`
     return {
-      webUrl: `https://${appName}.${this.clusterUrl}`,
+      webUrl: `https://${appName}.${this.clusterDomain}`,
       flynnUrl: this.lastFlynnAppUrl,
-      ensureConfig: ({env} = {}) => {
-        this.proposedConfig = {env}
+      appDomain: `${appName}.${this.clusterDomain}`,
+      withConfig: ({env, routes} = {}) => {
+        this.proposedEnv = env
+        this.proposedRoutes = routes
       }
     }
   }

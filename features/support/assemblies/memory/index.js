@@ -20,7 +20,8 @@ module.exports = class MemoryAssembly {
   async stop () {}
 
   createActor () {
-    this.flynnService = new FlynnServiceMemory('prs.example.com')
+    this.clusterDomain = 'prs.example.com'
+    this.flynnService = new FlynnServiceMemory(this.clusterDomain)
     this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
     const configLoader = new ConfigLoaderMemory()
 
@@ -117,7 +118,11 @@ class MemoryActor {
     this.configLoader.setConfig(yaml.safeLoad(config))
   }
 
-  assertEnvironmentSet (config) {
-    expect(this.flynnService.proposedConfig).to.eql(config)
+  assertEnvironmentSet (env) {
+    expect(this.flynnService.proposedEnv).to.eql(env)
+  }
+
+  assertServiceIsUp ({service, domain}) {
+    expect(this.flynnService.proposedRoutes[service]).to.eql(domain)
   }
 }

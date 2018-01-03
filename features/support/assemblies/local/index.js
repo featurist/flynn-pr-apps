@@ -195,10 +195,26 @@ class LocalActor extends ApiActorBase {
 
   async assertEnvironmentSet (config) {
     await retry(() => {
-      expect(this.fakeFlynnApi.deploys).to.eql([{
+      expect(this.fakeFlynnApi.deploy).to.eql({
         appName: `pr-${this.prNumber}`,
-        release: config
-      }])
+        release: {
+          env: config
+        }
+      })
     }, {timeout: retryTimeout})
+  }
+
+  async assertServiceIsUp ({service, domain}) {
+    await retry(() => {
+      expect(this.fakeFlynnApi.extraRoutes).to.eql({
+        type: 'http',
+        service,
+        domain
+      })
+      expect(this.fakeFlynnApi.scale).to.eql({
+        web: 1,
+        [service]: 1
+      })
+    })
   }
 }

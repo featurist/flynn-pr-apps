@@ -100,6 +100,7 @@ module.exports = class FakeFlynnApi {
     this.release = {env: {}}
     flynnController.post('/releases', (req, res) => {
       Object.assign(this.release.env, req.body.env)
+      this.release.appName = this.apps[Number(req.body.app_id)]
       res.status(201).send({id: releaseId})
     })
 

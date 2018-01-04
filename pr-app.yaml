@@ -1,0 +1,12 @@
+env:
+  STUFF_URL: "https://stuff-${APP_DOMAIN}"
+  GH_REPO: "https://github.com/some-org/some-repo.git"
+  GH_USER_TOKEN: 'some_token'
+  WEBHOOK_SECRET: 'some_secret'
+  FLYNN_CLUSTER_DOMAIN: 'prs.example.com'
+  FLYNN_AUTH_KEY: 'auth_key'
+resources:
+  - redis
+  - postgres
+routes:
+  web: "stuff-${APP_DOMAIN}"

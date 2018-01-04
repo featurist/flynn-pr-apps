@@ -160,7 +160,7 @@ Then('{actor}\'s main service can reach the microservice', async function (actor
       API_URL: `https://api-pr-${actor.prNumber}.${this.assembly.clusterDomain}`
     }),
     actor.assertServiceIsUp({
-      service: 'api-web',
+      service: `pr-${actor.prNumber}-api-web`,
       domain: `api-pr-${actor.prNumber}.${this.assembly.clusterDomain}`
     })
   ])

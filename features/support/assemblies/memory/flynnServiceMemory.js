@@ -31,7 +31,10 @@ module.exports = class FlynnServiceMemory {
           return result
         }, {})
         this.proposedEnv = Object.assign({}, resourcesEnv, env)
-        this.proposedRoutes = routes
+        this.proposedRoutes = Object.entries(routes || {}).reduce((result, [k, v]) => {
+          result[`${appName}-${k}`] = v
+          return result
+        }, {})
         this.proposedResources = resources
       }
     }

@@ -214,7 +214,7 @@ class LocalActor extends ApiActorBase {
       })
       expect(this.fakeFlynnApi.scale).to.eql({
         web: 1,
-        [service]: 1
+        [service.replace(`pr-${this.prNumber}-`, '')]: 1
       })
     })
   }

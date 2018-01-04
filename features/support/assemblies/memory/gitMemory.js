@@ -6,6 +6,7 @@ module.exports = class GitMemory {
   makeShallowPushableClone () {
     return {
       push: () => {
+        delete this.fakeFlynnApi.notPushed
         if (this.fakeFlynnApi.nextDeployShouldFail) {
           delete this.fakeFlynnApi.nextDeployShouldFail
           throw new Error('Pre receive hook failed')

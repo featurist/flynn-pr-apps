@@ -107,6 +107,7 @@ When('the deploy fails', async function () {
 
 Then('{actor} sees that the deploy failed', async function (actor) {
   await actor.shouldSeeDeployFailed()
+  await actor.shouldNotSeeApp()
 })
 
 Given('{actor}\'s app needs environment variables {string} and {string}', function (actor, envVar1, envVar2) {
@@ -189,4 +190,18 @@ Then('{actor}\'s pr app has postgres and redis', async function (actor) {
     }),
     actor.assertResources(['redis', 'postgres'])
   ])
+})
+
+Given('{actor}\'s app needs extra configuration', function (actor) {
+})
+
+When('{actor} adds configuration file with a typo', async function (actor) {
+  const content = `
+envs:
+  FOO: bar
+resource:
+  - redis
+  `
+
+  await actor.addPrAppConfig(content)
 })

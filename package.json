@@ -18,7 +18,8 @@
     "httpism": "^3.8.0",
     "js-yaml": "^3.10.0",
     "lowscore": "^1.17.0",
-    "morgan": "^1.9.0"
+    "morgan": "^1.9.0",
+    "superstruct": "^0.5.0"
   },
   "devDependencies": {
     "basicauth-middleware": "^3.0.0",

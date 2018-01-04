@@ -12,6 +12,7 @@ module.exports = class MemoryAssembly {
   async setup () {}
   async start () {
     this.fakeFlynnApi = {
+      notPushed: true,
       failNextDeploy () {
         this.nextDeployShouldFail = true
       }
@@ -40,6 +41,7 @@ module.exports = class MemoryAssembly {
     return new MemoryActor({
       prAppsClient: this.prAppsClient,
       flynnService: this.flynnService,
+      fakeFlynnApi: this.fakeFlynnApi,
       configLoader
     })
   }
@@ -50,10 +52,11 @@ module.exports = class MemoryAssembly {
 }
 
 class MemoryActor {
-  constructor ({prAppsClient, flynnService, configLoader}) {
+  constructor ({prAppsClient, flynnService, fakeFlynnApi, configLoader}) {
     this.flynnService = flynnService
     this.prAppsClient = prAppsClient
     this.configLoader = configLoader
+    this.fakeFlynnApi = fakeFlynnApi
     this.currentBranch = 'Feature1'
     this.prNumber = 23
   }
@@ -111,7 +114,10 @@ class MemoryActor {
   shouldSeeNewApp () {}
   shouldSeeUpdatedApp () {}
   shouldNotSeeApp () {
-    expect(this.flynnService.destroyPrAppRequests).to.eql([`pr-${this.prNumber}`])
+    expect(
+      this.flynnService.destroyPrAppRequests === [`pr-${this.prNumber}`] ||
+      this.fakeFlynnApi.notPushed
+    ).to.eq(true)
   }
 
   addPrAppConfig (config) {

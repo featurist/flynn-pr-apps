@@ -2,9 +2,11 @@ module.exports = class FlynnServiceMemory {
   constructor (clusterDomain) {
     this.clusterDomain = clusterDomain
     this.destroyPrAppRequests = []
+    this.appNotCreated = true
   }
 
   createApp (appName) {
+    delete this.appNotCreated
     return this._makeApp(appName)
   }
 

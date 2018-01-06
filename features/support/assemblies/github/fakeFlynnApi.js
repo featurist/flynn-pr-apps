@@ -22,13 +22,17 @@ done
 }
 
 module.exports = class FakeFlynnApi {
-  constructor ({authKey, port}) {
+  constructor ({authKey, port, clusterDomain}) {
     this.authKey = authKey
     this.port = port
+    this.clusterDomain = clusterDomain
+    this.providerId = 40
     this.apps = {}
     this.releases = {}
     this.deploys = []
     this.fs = new FsAdapter()
+    this.appId = 10
+    this.release = {env: {}}
   }
 
   async start () {
@@ -52,12 +56,9 @@ module.exports = class FakeFlynnApi {
     flynnController.use(bodyParser.json())
     flynnController.use(basicAuth)
 
-    let appId = 10
     flynnController.post('/apps', (req, res) => {
-      this._createAppRepo(req.body.name).then(() => {
-        debug('Creating app %s', req.body.name)
-        this.apps[++appId] = req.body.name
-        res.status(201).send({id: appId})
+      this.createApp(req.body.name).then(() => {
+        res.status(201).send({id: this.appId})
       }).catch(e => {
         console.error(e.stack)
         res.status(500).end()
@@ -97,7 +98,6 @@ module.exports = class FakeFlynnApi {
       }
     })
 
-    this.release = {env: {}}
     flynnController.post('/releases', (req, res) => {
       Object.assign(this.release.env, req.body.env)
       this.release.appName = this.apps[Number(req.body.app_id)]
@@ -128,16 +128,21 @@ module.exports = class FakeFlynnApi {
       res.status(200).end()
     })
 
+    this.resources = []
     flynnController.get('/apps/:appId/resources', (req, res) => {
-      res.send([])
+      res.send(this.resources)
     })
 
-    this.resources = []
+    this.providers = []
+    flynnController.get('/providers/:id', (req, res) => {
+      res.send(this.providers.find(p => p.id === Number(req.params.id)))
+    })
+
     flynnController.post('/providers/:provider/resources', (req, res) => {
       const provider = req.params.provider
-      Object.assign(this.release.env, {[`${provider.toUpperCase()}_URL`]: `${provider}://stuff`})
+      this._setResourceEnv(provider)
       this.resources.push({
-        resource: req.params.provider,
+        providerName: req.params.provider,
         apps: req.body.apps.map(id => this.apps[Number(id)])
       })
       res.status(201).end()
@@ -181,6 +186,38 @@ module.exports = class FakeFlynnApi {
     this.nextDeployShouldFail = true
   }
 
+  async createApp (name) {
+    debug('Creating app %s', name)
+    const repoDir = await this._createAppRepo(name)
+    this.apps[++this.appId] = name
+    this.appName = name
+    return {
+      gitUrl: `file://${repoDir}`
+    }
+  }
+
+  async addResources (resources) {
+    debug('Adding resources %o', resources)
+    resources.forEach(r => {
+      const providerId = ++this.providerId
+      this._setResourceEnv(r)
+      this.providers.push({name: r, id: providerId})
+      this.resources.push({
+        apps: [this.appName],
+        provider: providerId,
+        providerName: r
+      })
+    })
+  }
+
+  addEnv (env) {
+    Object.assign(this.release.env, env)
+  }
+
+  _setResourceEnv (resource) {
+    Object.assign(this.release.env, {[`${resource.toUpperCase()}_URL`]: `${resource}://stuff`})
+  }
+
   async _createAppRepo (appName) {
     const repoDir = `${this.reposDir}/${appName}.git`
     fs.ensureDirSync(repoDir)
@@ -198,6 +235,7 @@ module.exports = class FakeFlynnApi {
     fs.writeFileSync(`${repoDir}/hooks/pre-receive`, preReceiveHook, {
       mode: '777'
     })
+    return repoDir
   }
 
   _destroyAppRepo (appName) {

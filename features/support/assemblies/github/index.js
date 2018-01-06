@@ -36,13 +36,15 @@ module.exports = class GithubAssembly {
     })
 
     const fakeFlynnApiPort = await getRandomPort()
+    this.clusterDomain = `prs.localtest.me:${fakeFlynnApiPort}`
+
     this.fakeFlynnApi = new FakeFlynnApi({
       authKey: 'flynnApiAuthKey',
-      port: fakeFlynnApiPort
+      port: fakeFlynnApiPort,
+      clusterDomain: this.clusterDomain
     })
 
-    this.clusterDomain = `prs.localtest.me:${fakeFlynnApiPort}`
-    this.flynnService = new FlynnService({
+    const flynnService = new FlynnService({
       clusterDomain: this.clusterDomain,
       authKey: 'flynnApiAuthKey'
     })
@@ -50,7 +52,7 @@ module.exports = class GithubAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      flynnService: this.flynnService,
+      flynnService,
       configLoader: new ConfigLoader()
     })
     this.webhookSecret = 'webhook secret'
@@ -107,15 +109,15 @@ module.exports = class GithubAssembly {
   createActor () {
     return new GithubActor({
       userLocalRepo: this.userLocalRepo,
-      flynnService: this.flynnService,
+      fakeFlynnApi: this.fakeFlynnApi,
       codeHostingService: this.codeHostingService
     })
   }
 }
 
 class GithubActor extends ApiActorBase {
-  constructor ({userLocalRepo, codeHostingService, flynnService}) {
-    super({userLocalRepo, flynnService, currentBranch: 'Feature1'})
+  constructor ({userLocalRepo, codeHostingService, fakeFlynnApi}) {
+    super({userLocalRepo, fakeFlynnApi, currentBranch: 'Feature1'})
     this.codeHostingService = codeHostingService
   }
 

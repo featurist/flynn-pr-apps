@@ -20,8 +20,14 @@ Feature: Configure Pr App environment, resources, routes, etc.
     And Frank opens a new pull request
     Then Frank's pr app has postgres and redis
 
-  Scenario: config file validation
+  Scenario: Config file validation
     Given Frank's app needs extra configuration
     When Frank adds configuration file with a typo
     And Frank opens a new pull request
     Then Frank sees that the deploy failed
+
+  Scenario: Add new resource to existing pr app
+    Given Frank has a pr app with postgres
+    When Frank adds redis to the configuration file
+    And Frank pushes changes to the pr branch
+    Then Frank's pr app has postgres and redis

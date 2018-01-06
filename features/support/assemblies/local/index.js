@@ -38,13 +38,15 @@ module.exports = class LocalAssembly {
       git
     })
 
+    this.clusterDomain = `prs.localtest.me:${this.fakeFlynnApiPort}`
+
     this.fakeFlynnApi = new FakeFlynnApi({
       authKey: 'flynnApiAuthKey',
-      port: this.fakeFlynnApiPort
+      port: this.fakeFlynnApiPort,
+      clusterDomain: this.clusterDomain
     })
 
-    this.clusterDomain = `prs.localtest.me:${this.fakeFlynnApiPort}`
-    this.flynnService = new FlynnService({
+    const flynnService = new FlynnService({
       clusterDomain: this.clusterDomain,
       authKey: 'flynnApiAuthKey'
     })
@@ -54,7 +56,7 @@ module.exports = class LocalAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      flynnService: this.flynnService,
+      flynnService,
       configLoader: new ConfigLoader()
     })
     this.webhookSecret = 'webhook secret'
@@ -95,7 +97,6 @@ module.exports = class LocalAssembly {
     return new LocalActor({
       userLocalRepo: this.userLocalRepo,
       prAppsClient: this.prAppsClient,
-      flynnService: this.flynnService,
       codeHostingServiceApi: this.codeHostingServiceApi,
       fakeFlynnApi: this.fakeFlynnApi
     })
@@ -104,16 +105,14 @@ module.exports = class LocalAssembly {
 
 class LocalActor extends ApiActorBase {
   constructor ({
-    flynnService,
     codeHostingServiceApi,
     userLocalRepo,
     prAppsClient,
     fakeFlynnApi
   }) {
-    super({userLocalRepo, flynnService, currentBranch: 'Feature1'})
+    super({userLocalRepo, fakeFlynnApi, currentBranch: 'Feature1'})
     this.prAppsClient = prAppsClient
     this.codeHostingServiceApi = codeHostingServiceApi
-    this.fakeFlynnApi = fakeFlynnApi
     this.prNumber = 23
 
     this.prNotifier = new PrNotifier({
@@ -221,8 +220,8 @@ class LocalActor extends ApiActorBase {
 
   async assertResources (resources) {
     await retry(() => {
-      expect(this.fakeFlynnApi.resources.map(r => r.resource).sort()).to.eql(resources.sort())
-      expect(this.fakeFlynnApi.resources.map(r => r.apps).sort()).to.eql([
+      expect(this.fakeFlynnApi.resources.map(r => r.providerName).sort()).to.eql(resources.sort())
+      expect(this.fakeFlynnApi.resources.map(r => r.apps)).to.eql([
         [`pr-${this.prNumber}`],
         [`pr-${this.prNumber}`]
       ])

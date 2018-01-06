@@ -65,7 +65,11 @@ class MemoryActor {
   async stop () {}
 
   async pushBranch () {}
-  withExistingPrApp () {}
+
+  withExistingPrApp (config) {
+    this.flynnService.setConfig(config)
+  }
+
   withClosedPullRequest () {}
 
   async openPullRequest () {

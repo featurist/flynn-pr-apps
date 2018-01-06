@@ -199,9 +199,25 @@ When('{actor} adds configuration file with a typo', async function (actor) {
   const content = `
 envs:
   FOO: bar
-resource:
+resources:
   - redis
   `
+  await actor.addPrAppConfig(content)
+})
 
+Given('{actor} has a pr app with postgres', async function (actor) {
+  await actor.withExistingPrApp({
+    resources: ['postgres'],
+    env: {FOO: 'bar'}
+  })
+  await this.assembly.enablePrEvents()
+})
+
+When('{actor} adds redis to the configuration file', async function (actor) {
+  const content = `
+resources:
+  - postgres
+  - redis
+  `
   await actor.addPrAppConfig(content)
 })

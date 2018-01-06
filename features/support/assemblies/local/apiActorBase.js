@@ -7,20 +7,20 @@ module.exports = class ApiActorBase {
   constructor ({
     userLocalRepo,
     currentBranch,
-    flynnService
+    fakeFlynnApi
   }) {
     this.userLocalRepo = userLocalRepo
     this.currentBranch = currentBranch
-    this.flynnService = flynnService
+    this.fakeFlynnApi = fakeFlynnApi
   }
 
   start () {}
   stop () {}
 
-  async withExistingPrApp () {
+  async withExistingPrApp (config) {
     await this.pushBranch()
     await this.openPullRequest()
-    await this.createPrApp()
+    await this.createPrApp(config)
     await this.followDeployedAppLink()
     await this.shouldSeeNewApp()
   }
@@ -35,8 +35,14 @@ module.exports = class ApiActorBase {
     await this.userLocalRepo.pushBranch(this.currentBranch, '<h1>Hello World!</h1>')
   }
 
-  async createPrApp () {
-    const {gitUrl} = await this.flynnService.createApp(`pr-${this.prNotifier.prNumber}`)
+  async createPrApp (config = {}) {
+    const {gitUrl} = await this.fakeFlynnApi.createApp(`pr-${this.prNotifier.prNumber}`)
+    if (config.resources) {
+      this.fakeFlynnApi.addResources(config.resources)
+    }
+    if (config.env) {
+      this.fakeFlynnApi.addEnv(config.env)
+    }
     await this.userLocalRepo.pushCurrentBranchToFlynn(gitUrl)
   }
 
@@ -58,7 +64,7 @@ module.exports = class ApiActorBase {
 
   async followDeployedAppLink () {
     const browser = new HeadlessBrowser()
-    const deployedAppUrl = `https://pr-${this.prNotifier.prNumber}.${this.flynnService.clusterDomain}`
+    const deployedAppUrl = `https://pr-${this.prNotifier.prNumber}.${this.fakeFlynnApi.clusterDomain}`
     this.appIndexPageContent = await browser.visit(deployedAppUrl)
   }
 

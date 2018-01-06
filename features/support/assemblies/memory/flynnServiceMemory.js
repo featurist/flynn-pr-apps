@@ -3,6 +3,8 @@ module.exports = class FlynnServiceMemory {
     this.clusterDomain = clusterDomain
     this.destroyPrAppRequests = []
     this.appNotCreated = true
+    this.proposedEnv = {}
+    this.proposedResources = []
   }
 
   createApp (appName) {
@@ -18,6 +20,15 @@ module.exports = class FlynnServiceMemory {
     return this._makeApp(appName)
   }
 
+  setConfig ({env, resources = []} = {}) {
+    const resourcesEnv = resources.reduce((result, resource) => {
+      result[`${resource.toUpperCase()}_URL`] = `${resource}://stuff`
+      return result
+    }, {})
+    Object.assign(this.proposedEnv, resourcesEnv, env)
+    this.proposedResources = Array.from(new Set(this.proposedResources.concat(resources)))
+  }
+
   _makeApp (appName) {
     this.lastDeployedAppUrl = `https://${appName}.${this.clusterDomain}`
     this.lastFlynnAppUrl = `https://dashboard.${this.clusterDomain}/apps/${appName}`
@@ -26,16 +37,12 @@ module.exports = class FlynnServiceMemory {
       flynnUrl: this.lastFlynnAppUrl,
       appDomain: `${appName}.${this.clusterDomain}`,
       withConfig: ({env, routes, resources = []} = {}) => {
-        const resourcesEnv = resources.reduce((result, resource) => {
-          result[`${resource.toUpperCase()}_URL`] = `${resource}://stuff`
-          return result
-        }, {})
-        this.proposedEnv = Object.assign({}, resourcesEnv, env)
         this.proposedRoutes = Object.entries(routes || {}).reduce((result, [k, v]) => {
           result[`${appName}-${k}`] = v
           return result
         }, {})
-        this.proposedResources = resources
+
+        this.setConfig({env, resources})
       }
     }
   }

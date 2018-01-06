@@ -3,5 +3,5 @@ function cucumber_normal {
 }
 
 function cucumber_debug {
-  DEBUG=${DEBUG:-pr-apps*} node --inspect-brk ./node_modules/.bin/cucumber.js "$@"
+  DEBUG=${DEBUG:-pr-apps*} node_modules/.bin/cucumber-electron --electron-debug "$@"
 }

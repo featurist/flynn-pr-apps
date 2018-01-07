@@ -116,6 +116,7 @@ class MemoryActor {
   }
 
   shouldSeeNewApp () {}
+  shouldBeAbleToPushLargeRepos () {}
   shouldSeeUpdatedApp () {}
   shouldNotSeeApp () {
     expect(

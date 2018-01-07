@@ -68,6 +68,11 @@ module.exports = class ApiActorBase {
     this.appIndexPageContent = await browser.visit(deployedAppUrl)
   }
 
+  async shouldBeAbleToPushLargeRepos () {
+    const initDeploy = this.fakeFlynnApi.deploys[0]
+    expect(initDeploy.release.processes.slugbuilder.resources.temp_disk.limit).to.eq(1073741824)
+  }
+
   async shouldSeeNewApp () {
     expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1>')
   }

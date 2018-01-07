@@ -9,6 +9,7 @@ const morgan = require('morgan')
 const debug = require('debug')('pr-apps:fakeFlynnApi')
 const FsAdapter = require('../../../../lib/fsAdapter')
 const ShellAdapter = require('../../../../lib/shellAdapter')
+const clone = require('../../../../lib/clone')
 
 function createPreReceiveHook (appDir) {
   return `
@@ -21,6 +22,10 @@ done
 `
 }
 
+function resourceEnv (resource) {
+  return {[`${resource.toUpperCase()}_URL`]: `${resource}://stuff`}
+}
+
 module.exports = class FakeFlynnApi {
   constructor ({authKey, port, clusterDomain, useSsl = true}) {
     this.authKey = authKey
@@ -29,11 +34,13 @@ module.exports = class FakeFlynnApi {
     this.clusterDomain = clusterDomain
     this.providerId = 40
     this.apps = {}
-    this.releases = {}
     this.deploys = []
     this.fs = new FsAdapter()
     this.appId = 10
-    this.release = {env: {}}
+    this.release = {
+      id: 0,
+      env: {}
+    }
   }
 
   async start () {
@@ -99,20 +106,19 @@ module.exports = class FakeFlynnApi {
       }
     })
 
-    const releaseId = '865'
     flynnController.get('/apps/:appId/release', (req, res) => {
       if (this.release.id) {
-        res.send({id: this.release.id})
+        res.send(this.release)
       } else {
         res.status(404).end()
       }
     })
 
     flynnController.post('/releases', (req, res) => {
-      Object.assign(this.release.env, req.body.env)
-      this.release.id = releaseId
+      this.release.id++
+      this.release.env = req.body.env
       this.release.appName = this.apps[Number(req.body.app_id)]
-      res.status(201).send({id: releaseId})
+      res.status(201).send(this.release)
     })
 
     flynnController.post('/apps/:appId/deploy', (req, res) => {
@@ -120,6 +126,7 @@ module.exports = class FakeFlynnApi {
         appName: this.apps[Number(req.params.appId)],
         release: this.release
       }
+      this.deploys.push(clone(this.deploy))
       res.status(201).end()
     })
 
@@ -151,12 +158,13 @@ module.exports = class FakeFlynnApi {
 
     flynnController.post('/providers/:provider/resources', (req, res) => {
       const provider = req.params.provider
-      this._setResourceEnv(provider)
-      this.resources.push({
+      const resource = {
         providerName: req.params.provider,
-        apps: req.body.apps.map(id => this.apps[Number(id)])
-      })
-      res.status(201).end()
+        apps: req.body.apps.map(id => this.apps[Number(id)]),
+        env: resourceEnv(provider)
+      }
+      this.resources.push(resource)
+      res.status(201).send(resource)
     })
 
     const flynnGitReceive = createFlynnGitReceiveApp({
@@ -212,25 +220,24 @@ module.exports = class FakeFlynnApi {
   }
 
   async addResources (resources) {
-    debug('Adding resources %o', resources)
+    debug('Adding initial resources %o', resources)
     resources.forEach(r => {
       const providerId = ++this.providerId
-      this._setResourceEnv(r)
+      this.release.id = 1
       this.providers.push({name: r, id: providerId})
       this.resources.push({
         apps: [this.appName],
         provider: providerId,
-        providerName: r
+        providerName: r,
+        env: resourceEnv(r)
       })
     })
   }
 
   addEnv (env) {
+    debug('Setting initial env %o', env)
+    this.release.id = 1
     Object.assign(this.release.env, env)
-  }
-
-  _setResourceEnv (resource) {
-    Object.assign(this.release.env, {[`${resource.toUpperCase()}_URL`]: `${resource}://stuff`})
   }
 
   async _createAppRepo (appName) {

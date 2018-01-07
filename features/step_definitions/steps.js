@@ -40,7 +40,10 @@ When('{actor} follows the link in the notifiation', async function (actor) {
 })
 
 Then('{actor} sees the new app', async function (actor) {
-  await actor.shouldSeeNewApp()
+  Promise.all([
+    actor.shouldBeAbleToPushLargeRepos(),
+    actor.shouldSeeNewApp()
+  ])
 })
 
 Given('{actor} has a pr app', async function (actor) {

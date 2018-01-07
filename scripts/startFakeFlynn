@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+
+const FakeFlynnApi = require('../features/support/assemblies/github/fakeFlynnApi')
+
+const api = new FakeFlynnApi({
+  port: 8347,
+  authKey: 'a662478d7cfc362c2b91a1aaaeb52b87',
+  clusterDomain: 'localtest.me',
+  useSsl: false
+})
+
+api.apps = {2: 'stuff'}
+
+api.start().then(() => {
+  console.log('Fake flynn controller is running on "controller.prs.localtest.me:8347"')
+  console.log(`Use this .flynnrc to make "flynn" cli talking to this fake:\n${flynnrc}`)
+})
+
+process.on('exit', async () => {
+  await api.stop()
+})
+
+const flynnrc = `
+default = "default"
+
+[[cluster]]
+  Name = "default"
+  Key = "a662478d7cfc362c2b91a1aaaeb52b87"
+  ControllerURL = "http://controller.prs.localtest.me:8347"
+  GitURL = "http://git.prs.locatest.me:8347"
+  DockerPushURL = "" `

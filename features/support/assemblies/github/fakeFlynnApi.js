@@ -22,9 +22,10 @@ done
 }
 
 module.exports = class FakeFlynnApi {
-  constructor ({authKey, port, clusterDomain}) {
+  constructor ({authKey, port, clusterDomain, useSsl = true}) {
     this.authKey = authKey
     this.port = port
+    this.useSsl = useSsl
     this.clusterDomain = clusterDomain
     this.providerId = 40
     this.apps = {}
@@ -75,6 +76,15 @@ module.exports = class FakeFlynnApi {
       res.send(apps)
     })
 
+    flynnController.get('/apps/:appName', (req, res) => {
+      res.send(Object.entries(this.apps).reduce((result, [id, name]) => {
+        if (req.params.appName === name) {
+          result.id = id
+        }
+        return result
+      }, {}))
+    })
+
     flynnController.delete('/apps/:appId', (req, res) => {
       try {
         const appName = this.apps[req.params.appId]
@@ -89,10 +99,10 @@ module.exports = class FakeFlynnApi {
       }
     })
 
-    const releaseId = 865
+    const releaseId = '865'
     flynnController.get('/apps/:appId/release', (req, res) => {
-      if (this.release) {
-        res.send({id: releaseId})
+      if (this.release.id) {
+        res.send({id: this.release.id})
       } else {
         res.status(404).end()
       }
@@ -100,6 +110,7 @@ module.exports = class FakeFlynnApi {
 
     flynnController.post('/releases', (req, res) => {
       Object.assign(this.release.env, req.body.env)
+      this.release.id = releaseId
       this.release.appName = this.apps[Number(req.body.app_id)]
       res.status(201).send({id: releaseId})
     })
@@ -169,11 +180,15 @@ module.exports = class FakeFlynnApi {
     app.use(subdomain('git.prs', flynnGitReceive))
     app.use(subdomain('*.prs', deployedApps))
 
-    const key = fs.readFileSync(`${__dirname}/server.key`, 'utf8')
-    const cert = fs.readFileSync(`${__dirname}/server.crt`, 'utf8')
+    if (this.useSsl) {
+      const key = fs.readFileSync(`${__dirname}/server.key`, 'utf8')
+      const cert = fs.readFileSync(`${__dirname}/server.crt`, 'utf8')
 
-    this.appServer = https.createServer({key, cert}, app)
-      .listen(this.port)
+      this.appServer = https.createServer({key, cert}, app)
+        .listen(this.port)
+    } else {
+      this.appServer = app.listen(this.port)
+    }
   }
 
   async stop () {

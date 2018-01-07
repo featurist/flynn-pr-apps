@@ -197,6 +197,7 @@ class LocalActor extends ApiActorBase {
       expect(this.fakeFlynnApi.deploy).to.eql({
         appName: `pr-${this.prNumber}`,
         release: {
+          id: '865',
           appName: `pr-${this.prNumber}`,
           env: config
         }

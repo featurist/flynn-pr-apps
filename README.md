@@ -2,7 +2,13 @@
 
 Automatically deploy pull requests into [Flynn](https://flynn.io/) cluster. Heroku Review Apps DIY.
 
+Compared to Heroku, Flynn is a good fit in case your _monorepo_ has more than web service. Because you can deploy the entire _stack_ of services with single `git push`, whereas on Heroku you'd have no choice but to split the repo into multiple ones. Euuuww.
+
+However Flynn's missing few goodies one of which is [Heroku review apps](https://devcenter.heroku.com/articles/github-integration-review-apps). Except it no longer does, because you can use this project. Interested? Read on.
+
 ## Usage
+
+This is itself a flynn app, so first thing is to add it to your cluster.
 
 ### Create Pr-Apps flynn app
 
@@ -49,7 +55,7 @@ Route key (`api-web` in the example above) refers to a service name in your `Pro
 
 ## Development
 
-It doesn't make much sense to run Pr Apps locally (even though you could with `yarn start`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](#Create Pr-Apps flynn app) above).
+It doesn't make much sense to run Pr Apps locally (even though you could with `yarn start`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](./#Create Pr-Apps flynn app) above).
 
 ## Testing
 

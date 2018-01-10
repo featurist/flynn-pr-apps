@@ -1,4 +1,3 @@
-@localOnly
 Feature: Configure Pr App environment, resources, routes, etc.
 
   Scenario: Add environment variables to new pr app

@@ -1,7 +1,13 @@
+export DEBUG=${DEBUG:-pr-apps*}
+
 function cucumber_normal {
-  DEBUG=${DEBUG:-pr-apps*} node_modules/.bin/cucumberjs --backtrace "$@"
+  if [[ $COVERAGE ]]; then
+    node_modules/.bin/istanbul cover node_modules/.bin/cucumberjs -- "$@"
+  else
+    node_modules/.bin/cucumberjs --backtrace -- "$@"
+  fi
 }
 
 function cucumber_debug {
-  DEBUG=${DEBUG:-pr-apps*} node_modules/.bin/cucumber-electron --electron-debug "$@"
+  node_modules/.bin/cucumber-electron --electron-debug "$@"
 }

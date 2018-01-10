@@ -2,7 +2,7 @@ const path = require('path')
 const express = require('express')
 const {spawn} = require('child_process')
 const backend = require('git-http-backend')
-const debug = require('debug')('pr-apps:flynnGitReceive')
+const debug = require('debug')('pr-apps:test:flynnGitReceive')
 
 module.exports = function ({reposDir}) {
   const app = express()

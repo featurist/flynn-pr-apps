@@ -1,4 +1,4 @@
-const debug = require('debug')('pr-apps:codeHostingServiceApiMemory')
+const debug = require('debug')('pr-apps:test:codeHostingServiceApiMemory')
 
 module.exports = class CodeHostingServiceApiMemory {
   constructor () {

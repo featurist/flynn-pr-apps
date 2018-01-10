@@ -17,6 +17,7 @@ Given('the deploy of {actor}\'s new pr app has started', async function (actor) 
   await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
+  await actor.shouldSeeDeployStarted()
   this.currentActor = actor
 })
 
@@ -32,6 +33,7 @@ Given('{actor} received a notification that his pr app deploy is complete', asyn
   await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
+  await actor.shouldSeeDeployStarted()
   await actor.shouldSeeDeploySuccessful()
 })
 
@@ -53,6 +55,7 @@ Given('{actor} has a pr app', async function (actor) {
 
 When('{actor} pushes changes to the pr branch', async function (actor) {
   await actor.pushMoreChanges()
+  await actor.shouldSeeDeployStarted()
 })
 
 Given('the deploy of the update of {actor}\'s pr app has started', async function (actor) {
@@ -60,6 +63,7 @@ Given('the deploy of the update of {actor}\'s pr app has started', async functio
   await this.assembly.enablePrEvents()
 
   await actor.pushMoreChanges()
+  await actor.shouldSeeDeployStarted()
   this.currentActor = actor
 })
 
@@ -68,6 +72,7 @@ Given('{actor} received a notification that his app is updated', async function 
   await this.assembly.enablePrEvents()
 
   await actor.pushMoreChanges()
+  await actor.shouldSeeDeployStarted()
   await actor.shouldSeeDeploySuccessful()
 })
 
@@ -101,6 +106,7 @@ Given('the deploy of {actor}\'s broken pr app has started', async function (acto
   await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
+  await actor.shouldSeeDeployStarted()
   this.currentActor = actor
 })
 
@@ -134,6 +140,7 @@ When('{actor} opens a new pull request', async function (actor) {
   await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
+  await actor.shouldSeeDeployStarted()
 })
 
 Then('{actor}\'s pr app has those environment variables set', async function (actor) {

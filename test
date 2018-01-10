@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -e
-PATH=node_modules/.bin:$PATH
+export PATH=node_modules/.bin:$PATH
+export COVERAGE=1
 
 standard $(git ls-files | grep -e '.js$')
 ./test-memory

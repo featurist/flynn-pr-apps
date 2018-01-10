@@ -1,6 +1,3 @@
-const {expect} = require('chai')
-const retry = require('trytryagain')
-const retryTimeout = require('../../retryTimeout')
 const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
 const FsAdapter = require('../../../../lib/fsAdapter')
@@ -186,50 +183,5 @@ class LocalActor extends ApiActorBase {
       }
     }
     await this.prAppsClient.post('/webhook', body)
-  }
-
-  async addPrAppConfig (config) {
-    await this.userLocalRepo.addFile('pr-app.yaml', config)
-  }
-
-  async assertEnvironmentSet (config) {
-    await retry(() => {
-      expect(this.fakeFlynnApi.deploy).to.eql({
-        appName: `pr-${this.prNumber}`,
-        release: {
-          id: this.fakeFlynnApi.release.id,
-          appName: `pr-${this.prNumber}`,
-          env: config
-        }
-      })
-    }, {timeout: retryTimeout})
-  }
-
-  async assertServiceIsUp ({service, domain}) {
-    await retry(() => {
-      expect(this.fakeFlynnApi.extraRoutes).to.eql({
-        type: 'http',
-        service,
-        domain
-      })
-      expect(this.fakeFlynnApi.scale).to.eql({
-        web: 1,
-        [service.replace(`pr-${this.prNumber}-`, '')]: 1
-      })
-    })
-  }
-
-  async assertResources (resources) {
-    await retry(() => {
-      expect(this.fakeFlynnApi.resources.map(r => r.providerName).sort()).to.eql(resources.sort())
-      expect(this.fakeFlynnApi.resources.map(r => r.apps)).to.eql([
-        [`pr-${this.prNumber}`],
-        [`pr-${this.prNumber}`]
-      ])
-    })
-  }
-
-  shouldNotSeeFlynnApp () {
-    expect(Object.keys(this.fakeFlynnApi.apps).length).to.eq(0)
   }
 }

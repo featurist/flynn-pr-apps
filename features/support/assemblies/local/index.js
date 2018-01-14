@@ -2,7 +2,7 @@ const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
 const FsAdapter = require('../../../../lib/fsAdapter')
 const GitAdapter = require('../../../../lib/gitAdapter')
-const FlynnService = require('../../../../lib/flynnService')
+const FlynnApiClient = require('../../../../lib/flynnApiClient')
 const ShellAdapter = require('../../../../lib/shellAdapter')
 const ConfigLoader = require('../../../../lib/configLoader')
 const createPrAppsApp = require('../../../..')
@@ -43,7 +43,7 @@ module.exports = class LocalAssembly {
       clusterDomain: this.clusterDomain
     })
 
-    const flynnService = new FlynnService({
+    const flynnApiClient = new FlynnApiClient({
       clusterDomain: this.clusterDomain,
       authKey: 'flynnApiAuthKey'
     })
@@ -53,7 +53,7 @@ module.exports = class LocalAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      flynnService,
+      flynnApiClient,
       configLoader: new ConfigLoader()
     })
     this.webhookSecret = 'webhook secret'
@@ -115,7 +115,8 @@ class LocalActor extends ApiActorBase {
     this.prNotifier = new PrNotifier({
       prEventsListener: codeHostingServiceApi,
       branch: this.currentBranch,
-      prNumber: this.prNumber
+      prNumber: this.prNumber,
+      fakeFlynnApi: this.fakeFlynnApi
     })
   }
 

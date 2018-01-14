@@ -6,7 +6,7 @@ const debug = require('debug')('pr-apps:web')
 const GithubApiAdapter = require('./lib/githubApiAdapter')
 const PrApps = require('./lib/prApps')
 const GitProject = require('./lib/gitProject')
-const FlynnService = require('./lib/flynnService')
+const FlynnApiClient = require('./lib/flynnApiClient')
 const FsAdapter = require('./lib/fsAdapter')
 const GitAdapter = require('./lib/gitAdapter')
 const ConfigLoader = require('./lib/configLoader')
@@ -114,7 +114,7 @@ if (!module.parent) {
     token: process.env.GH_USER_TOKEN,
     repo: process.env.GH_REPO
   })
-  const flynnService = new FlynnService({
+  const flynnApiClient = new FlynnApiClient({
     authKey: process.env.FLYNN_AUTH_KEY,
     clusterDomain: process.env.FLYNN_CLUSTER_DOMAIN
   })
@@ -122,7 +122,7 @@ if (!module.parent) {
   const prApps = new PrApps({
     codeHostingServiceApi,
     scmProject,
-    flynnService,
+    flynnApiClient,
     configLoader: new ConfigLoader()
   })
   const port = process.env.PORT

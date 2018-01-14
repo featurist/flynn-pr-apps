@@ -3,7 +3,7 @@ const GithubUrl = require('../../../../lib/githubUrl')
 const PrNotifier = require('../memory/prNotifier')
 
 module.exports = class GithubService {
-  constructor ({prEventsListener, repo, token}) {
+  constructor ({prEventsListener, repo, token, fakeFlynnApi}) {
     ({owner: this.owner, repo: this.repo} = new GithubUrl({repoUrl: repo, token}))
     this.ghApi = new GitHubApi()
     this.ghApi.authenticate({
@@ -11,6 +11,7 @@ module.exports = class GithubService {
       token
     })
     this.prEventsListener = prEventsListener
+    this.fakeFlynnApi = fakeFlynnApi
   }
 
   async createWebhook (url, events, secret) {
@@ -85,8 +86,10 @@ module.exports = class GithubService {
     })
     return new PrNotifier({
       prEventsListener: this.prEventsListener,
+      fakeFlynnApi: this.fakeFlynnApi,
       prNumber: pr.number,
-      branch: pr.head.ref
+      branch: pr.head.ref,
+      checkUrls: false
     })
   }
 
@@ -116,8 +119,10 @@ module.exports = class GithubService {
     })
     return new PrNotifier({
       prEventsListener: this.prEventsListener,
+      fakeFlynnApi: this.fakeFlynnApi,
       prNumber: pr.number,
-      branch: pr.head.ref
+      branch: pr.head.ref,
+      checkUrls: false
     })
   }
 }

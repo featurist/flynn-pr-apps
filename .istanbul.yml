@@ -1,3 +1,2 @@
 instrumentation:
-    default-excludes: true
     excludes: ['features/**/*.js']

@@ -2,7 +2,7 @@ const yaml = require('js-yaml')
 const {expect} = require('chai')
 const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
-const FlynnServiceMemory = require('./flynnServiceMemory')
+const FlynnApiClientMemory = require('./flynnApiClientMemory')
 const CodeHostingServiceApiMemory = require('./codeHostingServiceApiMemory')
 const PrAppsClientMemory = require('./prAppsClientMemory')
 const GitMemory = require('./gitMemory')
@@ -22,7 +22,8 @@ module.exports = class MemoryAssembly {
 
   createActor () {
     this.clusterDomain = 'prs.example.com'
-    this.flynnService = new FlynnServiceMemory(this.clusterDomain)
+    this.flynnApiClient = new FlynnApiClientMemory(this.clusterDomain)
+
     this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
     const configLoader = new ConfigLoaderMemory()
 
@@ -33,14 +34,14 @@ module.exports = class MemoryAssembly {
         remoteUrl: 'https://github.com/asdfsd/bbbb.git',
         git: new GitMemory(this.fakeFlynnApi)
       }),
-      flynnService: this.flynnService,
+      flynnApiClient: this.flynnApiClient,
       configLoader
     })
     this.prAppsClient = new PrAppsClientMemory({prApps})
 
     return new MemoryActor({
       prAppsClient: this.prAppsClient,
-      flynnService: this.flynnService,
+      flynnApiClient: this.flynnApiClient,
       fakeFlynnApi: this.fakeFlynnApi,
       configLoader
     })
@@ -52,8 +53,8 @@ module.exports = class MemoryAssembly {
 }
 
 class MemoryActor {
-  constructor ({prAppsClient, flynnService, fakeFlynnApi, configLoader}) {
-    this.flynnService = flynnService
+  constructor ({prAppsClient, flynnApiClient, fakeFlynnApi, configLoader}) {
+    this.flynnApiClient = flynnApiClient
     this.prAppsClient = prAppsClient
     this.configLoader = configLoader
     this.fakeFlynnApi = fakeFlynnApi
@@ -67,7 +68,7 @@ class MemoryActor {
   async pushBranch () {}
 
   withExistingPrApp (config) {
-    this.flynnService.setConfig(config)
+    this.flynnApiClient.withExistingApp(`pr-${this.prNumber}`, config)
   }
 
   withClosedPullRequest () {}
@@ -94,8 +95,6 @@ class MemoryActor {
 
   async shouldSeeDeployStarted () {
     this.currentPrNotifier.waitForDeployStarted()
-    const lastFlynnAppUrl = this.flynnService.lastFlynnAppUrl
-    expect(lastFlynnAppUrl).to.eq(`https://dashboard.prs.example.com/apps/pr-${this.prNumber}`)
   }
 
   async shouldSeeDeployFinished () {
@@ -110,17 +109,13 @@ class MemoryActor {
     this.currentPrNotifier.waitForDeployFailed()
   }
 
-  async followDeployedAppLink () {
-    const deployedAppUrl = this.flynnService.lastDeployedAppUrl
-    expect(deployedAppUrl).to.eq(`https://pr-${this.prNumber}.prs.example.com`)
-  }
-
+  followDeployedAppLink () {}
   shouldSeeNewApp () {}
   shouldBeAbleToPushLargeRepos () {}
   shouldSeeUpdatedApp () {}
   shouldNotSeeApp () {
     expect(
-      this.flynnService.destroyPrAppRequests === [`pr-${this.prNumber}`] ||
+      this.flynnApiClient.app === 'destroyed' ||
       this.fakeFlynnApi.notPushed
     ).to.eq(true)
   }
@@ -130,14 +125,21 @@ class MemoryActor {
   }
 
   assertEnvironmentSet (env) {
-    expect(this.flynnService.proposedEnv).to.eql(env)
+    expect(this.flynnApiClient.release.env).to.eql(env)
   }
 
   assertServiceIsUp ({service, domain}) {
-    expect(this.flynnService.proposedRoutes[service]).to.eql(domain)
+    expect(this.flynnApiClient.routes).to.deep.include({
+      type: 'http',
+      service,
+      domain
+    })
   }
 
   assertResources (resources) {
-    expect(this.flynnService.proposedResources.sort()).to.eql(resources.sort())
+    expect(this.flynnApiClient.resources.map(r => {
+      const {name} = this.flynnApiClient.providers.find(p => p.id === r.provider)
+      return name
+    }).sort()).to.eql(resources.sort())
   }
 }

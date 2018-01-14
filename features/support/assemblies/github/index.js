@@ -5,7 +5,7 @@ const GithubApiAdapter = require('../../../../lib/githubApiAdapter')
 const GitProject = require('../../../../lib/gitProject')
 const FsAdapter = require('../../../../lib/fsAdapter')
 const GitAdapter = require('../../../../lib/gitAdapter')
-const FlynnService = require('../../../../lib/flynnService')
+const FlynnApiClient = require('../../../../lib/flynnApiClient')
 const ConfigLoader = require('../../../../lib/configLoader')
 const createPrAppsApp = require('../../../..')
 const createPrNotifierApp = require('./prNotifierApp')
@@ -44,7 +44,7 @@ module.exports = class GithubAssembly {
       clusterDomain: this.clusterDomain
     })
 
-    const flynnService = new FlynnService({
+    const flynnApiClient = new FlynnApiClient({
       clusterDomain: this.clusterDomain,
       authKey: 'flynnApiAuthKey'
     })
@@ -52,7 +52,7 @@ module.exports = class GithubAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      flynnService,
+      flynnApiClient,
       configLoader: new ConfigLoader()
     })
     this.webhookSecret = 'webhook secret'
@@ -73,7 +73,8 @@ module.exports = class GithubAssembly {
     this.codeHostingService = new GithubService({
       repo: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN,
-      prEventsListener: this.prNotifierApp
+      prEventsListener: this.prNotifierApp,
+      fakeFlynnApi: this.fakeFlynnApi
     })
 
     await Promise.all([

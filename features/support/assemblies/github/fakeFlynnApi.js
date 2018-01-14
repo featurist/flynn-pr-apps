@@ -1,4 +1,5 @@
 const express = require('express')
+const {expect} = require('chai')
 const fs = require('fs-extra')
 const https = require('https')
 const subdomain = require('express-subdomain')
@@ -33,10 +34,8 @@ module.exports = class FakeFlynnApi {
     this.useSsl = useSsl
     this.clusterDomain = clusterDomain
     this.providerId = 40
-    this.apps = {}
     this.deploys = []
     this.fs = new FsAdapter()
-    this.appId = 10
     this.release = {
       id: 0,
       env: {}
@@ -66,7 +65,7 @@ module.exports = class FakeFlynnApi {
 
     flynnController.post('/apps', (req, res) => {
       this.createApp(req.body.name).then(() => {
-        res.status(201).send({id: this.appId})
+        res.status(201).send({id: this.app.id})
       }).catch(e => {
         console.error(e.stack)
         res.status(500).end()
@@ -74,29 +73,19 @@ module.exports = class FakeFlynnApi {
     })
 
     flynnController.get('/apps', (req, res) => {
-      const apps = Object.entries(this.apps).map(([key, value]) => {
-        return {
-          id: key,
-          name: value
-        }
-      })
-      res.send(apps)
+      res.send([this.app])
     })
 
     flynnController.get('/apps/:appName', (req, res) => {
-      res.send(Object.entries(this.apps).reduce((result, [id, name]) => {
-        if (req.params.appName === name) {
-          result.id = id
-        }
-        return result
-      }, {}))
+      res.send({id: this.app.id})
     })
 
     flynnController.delete('/apps/:appId', (req, res) => {
       try {
-        const appName = this.apps[req.params.appId]
+        expect(req.params.appId).to.eq(this.app.id)
+        const appName = this.app.name
         debug('Destroying app %s', appName)
-        delete this.apps[req.params.appId]
+        delete this.app
         this._destroyAppRepo(appName)
         this._removeAppWebLocation(appName)
         res.status(200).end()
@@ -115,15 +104,17 @@ module.exports = class FakeFlynnApi {
     })
 
     flynnController.post('/releases', (req, res) => {
+      expect(req.body.app_id).to.eq(this.app.id)
       this.release.id++
       this.release.env = req.body.env
-      this.release.appName = this.apps[Number(req.body.app_id)]
+      this.release.appName = this.app.name
       res.status(201).send(this.release)
     })
 
     flynnController.post('/apps/:appId/deploy', (req, res) => {
+      expect(req.params.appId).to.eq(this.app.id)
       this.deploy = {
-        appName: this.apps[Number(req.params.appId)],
+        appName: this.app.name,
         release: this.release
       }
       this.deploys.push(clone(this.deploy))
@@ -131,23 +122,28 @@ module.exports = class FakeFlynnApi {
     })
 
     flynnController.get('/apps/:appId/routes', (req, res) => {
+      expect(req.params.appId).to.eq(this.app.id)
       res.send([{
         service: 'web'
       }])
     })
 
     flynnController.post('/apps/:appId/routes', (req, res) => {
+      expect(req.params.appId).to.eq(this.app.id)
       this.extraRoutes = req.body
       res.status(201).end()
     })
 
     flynnController.put('/apps/:appId/scale/:releaseId', (req, res) => {
+      expect(req.params.appId).to.eq(this.app.id)
+      expect(Number(req.params.releaseId)).to.eq(this.release.id)
       this.scale = req.body.new_processes
       res.status(200).end()
     })
 
     this.resources = []
     flynnController.get('/apps/:appId/resources', (req, res) => {
+      expect(req.params.appId).to.eq(this.app.id)
       res.send(this.resources)
     })
 
@@ -160,7 +156,7 @@ module.exports = class FakeFlynnApi {
       const provider = req.params.provider
       const resource = {
         providerName: req.params.provider,
-        apps: req.body.apps.map(id => this.apps[Number(id)]),
+        apps: req.body.apps.map(id => this.app.id === id ? this.app.name : null).filter(_ => _),
         env: resourceEnv(provider)
       }
       this.resources.push(resource)
@@ -212,8 +208,10 @@ module.exports = class FakeFlynnApi {
   async createApp (name) {
     debug('Creating app %s', name)
     const repoDir = await this._createAppRepo(name)
-    this.apps[++this.appId] = name
-    this.appName = name
+    this.app = {
+      id: 'someAppId',
+      name
+    }
     return {
       gitUrl: `file://${repoDir}`
     }
@@ -226,7 +224,7 @@ module.exports = class FakeFlynnApi {
       this.release.id = 1
       this.providers.push({name: r, id: providerId})
       this.resources.push({
-        apps: [this.appName],
+        apps: [this.app.name],
         provider: providerId,
         providerName: r,
         env: resourceEnv(r)

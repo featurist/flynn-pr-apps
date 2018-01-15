@@ -59,13 +59,24 @@ It doesn't make much sense to run Pr Apps locally (even though you could with `y
 
 ## Testing
 
-Run core in-memory tests:
+This project takes a novel approach to testing outlined in more detailed [here](https://github.com/subsecondtdd/todo-subsecond). There is no catchy name yet (ideas are welcome), but basically the idea is that instead of a traditional test pyramid with different sets of tests for different layers (integration, unit, etc.), there is a single layer of tests that runs in different modes (aka assemblies). Ranging from an in-memory core assembly, where all external dependencies (e.g. fs, database, browser ui, etc.) are replaced with memory implementations, down to the one with the most possible amount of "real" dependencies. The more "real" assemblies cover more code but also take longer to run.
+
+The basic premise of all this is that a lot of your app is actaully that inner core, that can be tested all in memory in milliseconds. And as the application gets bigger it's mostly growing core and to a lesser extent the integration surface with external APIs. All this means:
+
+- blazingly fast integration tests with a reasonable coverage whose performance does not degrade over time;
+- the same tests can be run in a more real mode (in an envirinments where we don't care about fast feedback, e.g. CI) means that they don't go out of sync with reality;
+- easy of debugging (if memory is passing, but memory + web service isn't, than the bug is likely in web service layer)
+- and more (see the link above)
+
+Back to Pr Apps though. In here you'll find three assemblies: memory, local and github.
+
+To run memory assembly:
 
 ```
 ./test-memory
 ```
 
-As above except with real fs, git, pr apps service and fake flynn service:
+For local assembly (memory + real fs, git, pr apps service, fake flynn service, fake github remote):
 
 ```
 ./test-local

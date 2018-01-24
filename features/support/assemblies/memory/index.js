@@ -103,6 +103,10 @@ class MemoryActor {
     expect(this.version).to.eq(version)
   }
 
+  shouldSeeUpdatedVersion ({oldVersion, newVersion}) {
+    expect(newVersion).to.not.eq(oldVersion)
+  }
+
   async shouldSeeDeployStarted () {
     this.currentPrNotifier.waitForDeployStarted()
   }

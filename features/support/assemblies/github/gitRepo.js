@@ -52,7 +52,6 @@ module.exports = class GitRepo {
       await this.sh('git commit -m "add index.js"')
       await this.sh(`git push --set-upstream origin ${branch}`)
     }
-    return this.sh(`git show-ref -s refs/remotes/origin/${branch}`)
   }
 
   async pushCurrentBranchToFlynn (remoteUrl) {

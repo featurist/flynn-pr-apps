@@ -133,17 +133,18 @@ module.exports = class ApiActorBase {
     expect(Object.keys(this.fakeFlynnApi.apps).length).to.eq(0)
   }
 
-  async getAppVersion () {
-    return retry(() => {
-      const postPushDeploy = this.fakeFlynnApi.lastDeploy
-      expect(postPushDeploy).to.exist // eslint-disable-line
-      const version = postPushDeploy.release.env.VERSION
-      expect(version).to.exist // eslint-disable-line
-      return version
-    }, {timeout: retryTimeout})
+  getAppVersion () {
+    const postPushDeploy = this.fakeFlynnApi.lastDeploy
+    expect(postPushDeploy).to.exist // eslint-disable-line
+    return postPushDeploy.release.env.VERSION
   }
 
   shouldSeeAppVersion (version) {
-    expect(version).to.eq(this.version)
+    expect(version).to.exist // eslint-disable-line
+  }
+
+  shouldSeeUpdatedVersion ({oldVersion, newVersion}) {
+    expect(newVersion).to.exist // eslint-disable-line
+    expect(newVersion).to.not.eq(oldVersion)
   }
 }

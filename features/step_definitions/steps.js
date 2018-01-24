@@ -239,10 +239,24 @@ Given('{actor} opened a pull request', async function (actor) {
   await actor.shouldSeeDeploySuccessful()
 })
 
-When('{actor} checks new pr app\'s version', async function (actor) {
-  this.appVersion = await actor.getAppVersion()
+When('{actor} checks pr app\'s version', function (actor) {
+  this.appVersion = actor.getAppVersion()
 })
 
 Then('{actor} can see that version', function (actor) {
   actor.shouldSeeAppVersion(this.appVersion)
+})
+
+Given('{actor} updated his pull request', async function (actor) {
+  await actor.withExistingPrApp({env: {VERSION: 5}})
+  await this.assembly.enablePrEvents()
+  await actor.pushMoreChanges()
+  await actor.shouldSeeDeploySuccessful()
+})
+
+Then('{actor} can see updated version', function (actor) {
+  actor.shouldSeeUpdatedVersion({
+    oldVersion: 5,
+    newVersion: this.appVersion
+  })
 })

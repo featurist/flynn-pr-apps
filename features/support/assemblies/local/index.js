@@ -183,7 +183,7 @@ class LocalActor extends ApiActorBase {
       pull_request: {
         head: {
           ref: this.currentBranch,
-          sha: ++this.version
+          sha: this.version + 1
         }
       }
     }

@@ -88,7 +88,7 @@ module.exports = function ({prApps, webhookSecret}) {
       } else if (action === 'synchronize') {
         debug('Initiating deploy update')
         res.status(200).send('Initiating deploy update')
-        await prApps.deployUpdate({branch, prNumber: number})
+        await prApps.deployUpdate({branch, prNumber: number, version})
       } else if (action === 'closed') {
         debug('Initiating app destroy')
         res.status(200).send('Initiating app destroy')

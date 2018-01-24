@@ -113,11 +113,11 @@ module.exports = class FakeFlynnApi {
 
     flynnController.post('/apps/:appId/deploy', (req, res) => {
       expect(req.params.appId).to.eq(this.app.id)
-      this.deploy = {
+      this.lastDeploy = {
         appName: this.app.name,
         release: this.release
       }
-      this.deploys.push(clone(this.deploy))
+      this.deploys.push(clone(this.lastDeploy))
       res.status(201).end()
     })
 

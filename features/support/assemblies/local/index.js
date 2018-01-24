@@ -111,6 +111,7 @@ class LocalActor extends ApiActorBase {
     this.prAppsClient = prAppsClient
     this.codeHostingServiceApi = codeHostingServiceApi
     this.prNumber = 23
+    this.version = 875
 
     this.prNotifier = new PrNotifier({
       prEventsListener: codeHostingServiceApi,
@@ -126,7 +127,8 @@ class LocalActor extends ApiActorBase {
       number: this.prNumber,
       pull_request: {
         head: {
-          ref: this.currentBranch
+          ref: this.currentBranch,
+          sha: this.version
         }
       }
     }
@@ -139,7 +141,8 @@ class LocalActor extends ApiActorBase {
       number: this.prNumber,
       pull_request: {
         head: {
-          ref: this.currentBranch
+          ref: this.currentBranch,
+          sha: this.version
         }
       }
     }
@@ -179,7 +182,8 @@ class LocalActor extends ApiActorBase {
       number: this.prNumber,
       pull_request: {
         head: {
-          ref: this.currentBranch
+          ref: this.currentBranch,
+          sha: ++this.version
         }
       }
     }

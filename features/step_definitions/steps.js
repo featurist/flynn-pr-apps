@@ -231,3 +231,18 @@ resources:
   `
   await actor.addPrAppConfig(content)
 })
+
+Given('{actor} opened a pull request', async function (actor) {
+  await this.assembly.enablePrEvents()
+  await actor.pushBranch()
+  await actor.openPullRequest()
+  await actor.shouldSeeDeploySuccessful()
+})
+
+When('{actor} checks new pr app\'s version', async function (actor) {
+  this.appVersion = await actor.getAppVersion()
+})
+
+Then('{actor} can see that version', function (actor) {
+  actor.shouldSeeAppVersion(this.appVersion)
+})

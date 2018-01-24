@@ -35,7 +35,7 @@ Feature: Deploy Github pull request
     When Frank reopens that pull request
     Then Frank should see that deploy of a pr app has started
 
-  Scenario: Pr auther is notified when deploy has failed
+  Scenario: Pr author is notified when deploy has failed
     Given the deploy of Frank's broken pr app has started
     When the deploy fails
     Then Frank sees that the deploy failed

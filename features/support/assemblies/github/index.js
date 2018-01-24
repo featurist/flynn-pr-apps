@@ -125,15 +125,17 @@ class GithubActor extends ApiActorBase {
   async openPullRequest () {
     this.prNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
     this.prNumber = this.prNotifier.prNumber
+    this.version = this.prNotifier.version
   }
 
   async reopenPullRequest () {
     this.prNotifier = await this.codeHostingService.reopenPullRequest(this.prNumber)
     this.prNumber = this.prNotifier.prNumber
+    this.version = this.prNotifier.version
   }
 
   async pushMoreChanges () {
-    await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
+    this.version = await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
   }
 
   async mergePullRequest () {

@@ -81,6 +81,9 @@ module.exports = class FlynnApiClientMemory {
     debug(`Deploying release %s for appId %s`, releaseId, appId)
     expect(appId).to.eq(this.app.id)
     expect(releaseId).to.eq(this.release.id)
+    this.lastDeploy = {
+      release: this.release
+    }
   }
 
   async scaleAppProcesses ({appId, releaseId, scaleRequest}) {

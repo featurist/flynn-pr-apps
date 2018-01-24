@@ -9,10 +9,10 @@ module.exports = class PrAppsClientMemory {
     this.enabled = true
   }
 
-  async openPullRequest (branch, prNumber) {
+  async openPullRequest (branch, prNumber, version) {
     if (this.enabled) {
       try {
-        await this.prApps.deployPullRequest({branch, prNumber})
+        await this.prApps.deployPullRequest({branch, prNumber, version})
       } catch (e) {
         console.error(e)
       }
@@ -24,9 +24,9 @@ module.exports = class PrAppsClientMemory {
     }
   }
 
-  async reopenPullRequest (branch, prNumber) {
+  async reopenPullRequest (branch, prNumber, version) {
     if (this.enabled) {
-      await this.prApps.deployPullRequest({branch, prNumber})
+      await this.prApps.deployPullRequest({branch, prNumber, version})
       return new PrNotifier({
         prEventsListener: this.prApps.codeHostingServiceApi,
         prNumber,
@@ -35,9 +35,9 @@ module.exports = class PrAppsClientMemory {
     }
   }
 
-  async pushMoreChanges (branch, prNumber) {
+  async pushMoreChanges (branch, prNumber, version) {
     if (this.enabled) {
-      await this.prApps.deployUpdate({branch, prNumber})
+      await this.prApps.deployUpdate({branch, prNumber, version})
       return new PrNotifier({
         prEventsListener: this.prApps.codeHostingServiceApi,
         prNumber,

@@ -89,6 +89,7 @@ module.exports = class GithubService {
       fakeFlynnApi: this.fakeFlynnApi,
       prNumber: pr.number,
       branch: pr.head.ref,
+      version: pr.head.sha,
       checkUrls: false
     })
   }
@@ -122,6 +123,7 @@ module.exports = class GithubService {
       fakeFlynnApi: this.fakeFlynnApi,
       prNumber: pr.number,
       branch: pr.head.ref,
+      version: pr.head.sha,
       checkUrls: false
     })
   }

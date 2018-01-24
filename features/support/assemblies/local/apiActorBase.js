@@ -94,7 +94,7 @@ module.exports = class ApiActorBase {
 
   async assertEnvironmentSet (config) {
     await retry(() => {
-      expect(this.fakeFlynnApi.deploy).to.eql({
+      expect(this.fakeFlynnApi.lastDeploy).to.eql({
         appName: `pr-${this.prNumber}`,
         release: {
           id: this.fakeFlynnApi.release.id,
@@ -131,5 +131,19 @@ module.exports = class ApiActorBase {
 
   shouldNotSeeFlynnApp () {
     expect(Object.keys(this.fakeFlynnApi.apps).length).to.eq(0)
+  }
+
+  async getAppVersion () {
+    return retry(() => {
+      const postPushDeploy = this.fakeFlynnApi.lastDeploy
+      expect(postPushDeploy).to.exist // eslint-disable-line
+      const version = postPushDeploy.release.env.VERSION
+      expect(version).to.exist // eslint-disable-line
+      return version
+    }, {timeout: retryTimeout})
+  }
+
+  shouldSeeAppVersion (version) {
+    expect(version).to.eq(this.version)
   }
 }

@@ -3,10 +3,18 @@ const {expect} = require('chai')
 const retryTimeout = require('../../retryTimeout')
 
 module.exports = class PrNotifier {
-  constructor ({prEventsListener, branch, prNumber, fakeFlynnApi, checkUrls = true}) {
+  constructor ({
+    prEventsListener,
+    branch,
+    prNumber,
+    version,
+    fakeFlynnApi,
+    checkUrls = true
+  }) {
     this.prEventsListener = prEventsListener
     this.branch = branch
     this.prNumber = prNumber
+    this.version = version
     this.fakeFlynnApi = fakeFlynnApi
     this.checkUrls = checkUrls
   }

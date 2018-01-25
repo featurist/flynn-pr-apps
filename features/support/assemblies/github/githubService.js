@@ -1,6 +1,7 @@
 const GitHubApi = require('github')
 const GithubUrl = require('../../../../lib/githubUrl')
 const PrNotifier = require('../memory/prNotifier')
+const debug = require('debug')('pr-apps:test:githubService')
 
 module.exports = class GithubService {
   constructor ({prEventsListener, repo, token, fakeFlynnApi}) {
@@ -15,6 +16,7 @@ module.exports = class GithubService {
   }
 
   async createWebhook (url, events, secret) {
+    debug('Creating webhook: url=%s, events=%o', url, events)
     await this.ghApi.repos.createHook({
       owner: this.owner,
       repo: this.repo,
@@ -40,6 +42,7 @@ module.exports = class GithubService {
         if (name === 'master') {
           return Promise.resolve()
         } else {
+          debug('Deleting branch %s', name)
           return this.ghApi.gitdata.deleteReference({
             owner: this.owner,
             repo: this.repo,
@@ -67,6 +70,7 @@ module.exports = class GithubService {
     })
     return Promise.all(
       hooks.map(({id}) => {
+        debug('Deleting webhook %s', id)
         return this.ghApi.repos.deleteHook({
           owner: this.owner,
           repo: this.repo,
@@ -77,6 +81,7 @@ module.exports = class GithubService {
   }
 
   async openPullRequest (branch) {
+    debug('Opening pull request for branch %s', branch)
     const {data: pr} = await this.ghApi.pullRequests.create({
       owner: this.owner,
       repo: this.repo,
@@ -89,12 +94,12 @@ module.exports = class GithubService {
       fakeFlynnApi: this.fakeFlynnApi,
       prNumber: pr.number,
       branch: pr.head.ref,
-      version: pr.head.sha,
       checkUrls: false
     })
   }
 
   async mergePullRequest (prNumber) {
+    debug('Merging pull request %s', prNumber)
     await this.ghApi.pullRequests.merge({
       owner: this.owner,
       repo: this.repo,
@@ -103,6 +108,7 @@ module.exports = class GithubService {
   }
 
   async closePullRequest (prNumber) {
+    debug('Closing pull require %s', prNumber)
     await this.ghApi.pullRequests.update({
       owner: this.owner,
       repo: this.repo,
@@ -112,6 +118,7 @@ module.exports = class GithubService {
   }
 
   async reopenPullRequest (prNumber) {
+    debug('Reopening pull require %s', prNumber)
     const {data: pr} = await this.ghApi.pullRequests.update({
       owner: this.owner,
       repo: this.repo,
@@ -123,7 +130,6 @@ module.exports = class GithubService {
       fakeFlynnApi: this.fakeFlynnApi,
       prNumber: pr.number,
       branch: pr.head.ref,
-      version: pr.head.sha,
       checkUrls: false
     })
   }

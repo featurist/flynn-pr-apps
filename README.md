@@ -10,7 +10,9 @@ However Flynn's missing few goodies one of which is [Heroku review apps](https:/
 
 This is itself a flynn app, so first thing is to add it to your cluster (see below for instructions).
 
-Once up, pr-apps will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app (or stack of apps) from the linked github repo into your flynn cluster. The deployed app url will be shown on github pull request page.
+Once up, pr-apps instance will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app (or stack of apps) from the linked github repo into your flynn cluster. The deployed app url will be shown on github pull request page. E.g:
+
+<img width="717" alt="image" src="https://user-images.githubusercontent.com/23721/35400213-0c76ae86-01ee-11e8-801b-d3b470ee17e5.png">
 
 The deployed app will have a `VERSION` environment variable, that will be kept in sync with the github sha of what's deployed.
 

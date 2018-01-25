@@ -118,6 +118,9 @@ module.exports = class FakeFlynnApi {
       this.release.id++
       this.release.env = req.body.env
       this.release.appName = this.app.name
+      if (req.body.processes) {
+        this.release.processes = req.body.processes
+      }
       res.status(201).send(this.release)
     })
 

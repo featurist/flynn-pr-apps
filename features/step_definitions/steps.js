@@ -42,7 +42,7 @@ When('{actor} follows the link in the notifiation', async function (actor) {
 })
 
 Then('{actor} sees the new app', async function (actor) {
-  Promise.all([
+  await Promise.all([
     actor.shouldBeAbleToPushLargeRepos(),
     actor.shouldSeeNewApp()
   ])

@@ -37,6 +37,7 @@
     "ngrok": "^2.2.24",
     "nodemon": "^1.14.8",
     "standard": "^10.0.3",
+    "supports-color": "^5.1.0",
     "trytryagain": "^1.2.0"
   }
 }

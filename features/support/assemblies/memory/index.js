@@ -13,7 +13,9 @@ const ConfigLoaderMemory = require('./configLoaderMemory')
 module.exports = class MemoryAssembly {
   async setup () {}
   async start () {
+    this.clusterDomain = 'prs.example.com'
     this.fakeFlynnApi = {
+      clusterDomain: this.clusterDomain,
       notPushed: true,
       failNextDeploy () {
         this.nextDeployShouldFail = true
@@ -23,10 +25,8 @@ module.exports = class MemoryAssembly {
   async stop () {}
 
   createActor () {
-    this.clusterDomain = 'prs.example.com'
     this.flynnApiClient = new FlynnApiClientMemory({
-      fakeFlynnApi: this.fakeFlynnApi,
-      clusterDomain: this.clusterDomain
+      fakeFlynnApi: this.fakeFlynnApi
     })
 
     this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
@@ -42,7 +42,10 @@ module.exports = class MemoryAssembly {
       flynnApiClient: this.flynnApiClient,
       configLoader
     })
-    this.prAppsClient = new PrAppsClientMemory({prApps})
+    this.prAppsClient = new PrAppsClientMemory({
+      prApps,
+      fakeFlynnApi: this.fakeFlynnApi
+    })
 
     return new MemoryActor({
       prAppsClient: this.prAppsClient,
@@ -101,19 +104,19 @@ class MemoryActor extends BaseActor {
   }
 
   async shouldSeeDeployStarted () {
-    this.currentPrNotifier.waitForDeployStarted()
+    await this.currentPrNotifier.waitForDeployStarted()
   }
 
   async shouldSeeDeployFinished () {
-    this.currentPrNotifier.waitForDeployFinished()
+    await this.currentPrNotifier.waitForDeployFinished()
   }
 
   async shouldSeeDeploySuccessful () {
-    this.currentPrNotifier.waitForDeploySuccessful()
+    await this.currentPrNotifier.waitForDeploySuccessful()
   }
 
   async shouldSeeDeployFailed () {
-    this.currentPrNotifier.waitForDeployFailed()
+    await this.currentPrNotifier.waitForDeployFailed()
   }
 
   followDeployedAppLink () {}
@@ -122,7 +125,7 @@ class MemoryActor extends BaseActor {
   shouldSeeUpdatedApp () {}
   shouldNotSeeApp () {
     expect(
-      this.flynnApiClient.app === 'destroyed' ||
+      this.fakeFlynnApi.app === 'destroyed' ||
       this.fakeFlynnApi.notPushed
     ).to.eq(true)
   }
@@ -132,11 +135,11 @@ class MemoryActor extends BaseActor {
   }
 
   assertEnvironmentSet (env) {
-    expect(omit(this.flynnApiClient.release.env, 'VERSION')).to.eql(env)
+    expect(omit(this.fakeFlynnApi.release.env, 'VERSION')).to.eql(env)
   }
 
   assertServiceIsUp ({service, domain}) {
-    expect(this.flynnApiClient.routes).to.deep.include({
+    expect(this.fakeFlynnApi.routes).to.deep.include({
       type: 'http',
       service,
       domain
@@ -144,8 +147,8 @@ class MemoryActor extends BaseActor {
   }
 
   assertResources (resources) {
-    expect(this.flynnApiClient.resources.map(r => {
-      const {name} = this.flynnApiClient.providers.find(p => p.id === r.provider)
+    expect(this.fakeFlynnApi.resources.map(r => {
+      const {name} = this.fakeFlynnApi.providers.find(p => p.id === r.provider)
       return name
     }).sort()).to.eql(resources.sort())
   }

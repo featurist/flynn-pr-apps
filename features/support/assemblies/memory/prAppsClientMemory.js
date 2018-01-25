@@ -1,8 +1,9 @@
 const PrNotifier = require('./prNotifier')
 
 module.exports = class PrAppsClientMemory {
-  constructor ({prApps}) {
+  constructor ({prApps, fakeFlynnApi}) {
     this.prApps = prApps
+    this.fakeFlynnApi = fakeFlynnApi
   }
 
   enable () {
@@ -19,6 +20,7 @@ module.exports = class PrAppsClientMemory {
       return new PrNotifier({
         prEventsListener: this.prApps.codeHostingServiceApi,
         prNumber,
+        fakeFlynnApi: this.fakeFlynnApi,
         branch
       })
     }
@@ -30,6 +32,7 @@ module.exports = class PrAppsClientMemory {
       return new PrNotifier({
         prEventsListener: this.prApps.codeHostingServiceApi,
         prNumber,
+        fakeFlynnApi: this.fakeFlynnApi,
         branch
       })
     }
@@ -45,6 +48,7 @@ module.exports = class PrAppsClientMemory {
       return new PrNotifier({
         prEventsListener: this.prApps.codeHostingServiceApi,
         prNumber,
+        fakeFlynnApi: this.fakeFlynnApi,
         branch
       })
     }

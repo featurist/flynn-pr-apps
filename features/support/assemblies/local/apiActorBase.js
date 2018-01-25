@@ -98,6 +98,7 @@ module.exports = class ApiActorBase extends BaseActor {
     await retry(() => {
       const lastDeploy = clone(this.fakeFlynnApi.lastDeploy)
       delete lastDeploy.release.env.VERSION
+      delete lastDeploy.release.processes
 
       expect(lastDeploy).to.eql({
         appName: `pr-${this.prNumber}`,

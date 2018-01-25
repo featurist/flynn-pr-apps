@@ -7,6 +7,7 @@ const FlynnApiClientMemory = require('./flynnApiClientMemory')
 const CodeHostingServiceApiMemory = require('./codeHostingServiceApiMemory')
 const PrAppsClientMemory = require('./prAppsClientMemory')
 const GitMemory = require('./gitMemory')
+const BaseActor = require('./baseActor')
 const ConfigLoaderMemory = require('./configLoaderMemory')
 
 module.exports = class MemoryAssembly {
@@ -23,7 +24,10 @@ module.exports = class MemoryAssembly {
 
   createActor () {
     this.clusterDomain = 'prs.example.com'
-    this.flynnApiClient = new FlynnApiClientMemory(this.clusterDomain)
+    this.flynnApiClient = new FlynnApiClientMemory({
+      fakeFlynnApi: this.fakeFlynnApi,
+      clusterDomain: this.clusterDomain
+    })
 
     this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
     const configLoader = new ConfigLoaderMemory()
@@ -53,15 +57,15 @@ module.exports = class MemoryAssembly {
   }
 }
 
-class MemoryActor {
+class MemoryActor extends BaseActor {
   constructor ({prAppsClient, flynnApiClient, fakeFlynnApi, configLoader}) {
+    super()
     this.flynnApiClient = flynnApiClient
     this.prAppsClient = prAppsClient
     this.configLoader = configLoader
     this.fakeFlynnApi = fakeFlynnApi
     this.currentBranch = 'Feature1'
     this.prNumber = 23
-    this.version = 1
   }
 
   async start () {}
@@ -76,15 +80,16 @@ class MemoryActor {
   withClosedPullRequest () {}
 
   async openPullRequest () {
-    this.currentPrNotifier = await this.prAppsClient.openPullRequest(this.currentBranch, this.prNumber, ++this.version)
+    this.currentPrNotifier = await this.prAppsClient.openPullRequest(this.currentBranch, this.prNumber, 1)
   }
 
   async reopenPullRequest () {
-    this.currentPrNotifier = await this.prAppsClient.reopenPullRequest(this.currentBranch, this.prNumber, ++this.version)
+    this.currentPrNotifier = await this.prAppsClient.reopenPullRequest(this.currentBranch, this.prNumber, 1)
   }
 
   async pushMoreChanges () {
-    this.currentPrNotifier = await this.prAppsClient.pushMoreChanges(this.currentBranch, this.prNumber, ++this.version)
+    const currentVersion = this.getAppVersion()
+    this.currentPrNotifier = await this.prAppsClient.pushMoreChanges(this.currentBranch, this.prNumber, currentVersion + 1)
   }
 
   async closePullRequest () {
@@ -93,18 +98,6 @@ class MemoryActor {
 
   async mergePullRequest () {
     await this.prAppsClient.mergePullRequest(this.prNumber)
-  }
-
-  getAppVersion () {
-    return this.flynnApiClient.lastDeploy.release.env.VERSION
-  }
-
-  shouldSeeAppVersion (version) {
-    expect(this.version).to.eq(version)
-  }
-
-  shouldSeeUpdatedVersion ({oldVersion, newVersion}) {
-    expect(newVersion).to.not.eq(oldVersion)
   }
 
   async shouldSeeDeployStarted () {

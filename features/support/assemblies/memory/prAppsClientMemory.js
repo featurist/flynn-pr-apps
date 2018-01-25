@@ -37,7 +37,11 @@ module.exports = class PrAppsClientMemory {
 
   async pushMoreChanges (branch, prNumber, version) {
     if (this.enabled) {
-      await this.prApps.deployUpdate({branch, prNumber, version})
+      try {
+        await this.prApps.deployUpdate({branch, prNumber, version})
+      } catch (e) {
+        console.error(e)
+      }
       return new PrNotifier({
         prEventsListener: this.prApps.codeHostingServiceApi,
         prNumber,

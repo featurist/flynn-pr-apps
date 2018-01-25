@@ -111,7 +111,6 @@ class LocalActor extends ApiActorBase {
     this.prAppsClient = prAppsClient
     this.codeHostingServiceApi = codeHostingServiceApi
     this.prNumber = 23
-    this.version = 875
 
     this.prNotifier = new PrNotifier({
       prEventsListener: codeHostingServiceApi,
@@ -128,7 +127,7 @@ class LocalActor extends ApiActorBase {
       pull_request: {
         head: {
           ref: this.currentBranch,
-          sha: this.version
+          sha: 1
         }
       }
     }
@@ -142,7 +141,7 @@ class LocalActor extends ApiActorBase {
       pull_request: {
         head: {
           ref: this.currentBranch,
-          sha: this.version
+          sha: 1
         }
       }
     }
@@ -177,13 +176,15 @@ class LocalActor extends ApiActorBase {
 
   async pushMoreChanges () {
     await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
+    const currentVersion = this.getAppVersion()
+    console.log('currentVersion', currentVersion)
     const body = {
       action: 'synchronize',
       number: this.prNumber,
       pull_request: {
         head: {
           ref: this.currentBranch,
-          sha: this.version + 1
+          sha: currentVersion + 1
         }
       }
     }

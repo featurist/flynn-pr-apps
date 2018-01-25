@@ -260,3 +260,16 @@ Then('{actor} can see updated version', function (actor) {
     newVersion: this.appVersion
   })
 })
+
+Given('{actor} has pushed a broken change', async function (actor) {
+  await actor.withExistingPrApp({env: {VERSION: 5}})
+  this.assembly.fakeFlynnApi.failNextDeploy()
+  await this.assembly.enablePrEvents()
+  await actor.pushMoreChanges()
+  await actor.shouldSeeDeployFailed()
+})
+
+Then('{actor} still sees the old version', function (actor) {
+  const currentVersion = actor.getAppVersion()
+  actor.shouldSeeAppVersion(currentVersion, 5)
+})

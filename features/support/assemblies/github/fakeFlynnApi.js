@@ -12,6 +12,16 @@ const FsAdapter = require('../../../../lib/fsAdapter')
 const ShellAdapter = require('../../../../lib/shellAdapter')
 const clone = require('../../../../lib/clone')
 
+function writePreReceiveHook ({appDir, repoDir, broken}) {
+  const preReceiveHook = broken
+    ? '#!/bin/sh\necho "Deploy failed" && exit 1'
+    : createPreReceiveHook(appDir)
+
+  fs.writeFileSync(`${repoDir}/hooks/pre-receive`, preReceiveHook, {
+    mode: '777'
+  })
+}
+
 function createPreReceiveHook (appDir) {
   return `
 #!/bin/bash
@@ -118,6 +128,10 @@ module.exports = class FakeFlynnApi {
         release: this.release
       }
       this.deploys.push(clone(this.lastDeploy))
+      // slugbuilder bump deploy does not set version
+      if (this.release.env) {
+        this.appVersion = this.release.env.VERSION
+      }
       res.status(201).end()
     })
 
@@ -203,6 +217,14 @@ module.exports = class FakeFlynnApi {
 
   failNextDeploy () {
     this.nextDeployShouldFail = true
+    if (this.app) {
+      const repoDir = `${this.reposDir}/${this.app.name}.git`
+      const appDir = `${this.appsDir}/${this.app.name}`
+
+      if (fs.existsSync(repoDir)) {
+        writePreReceiveHook({repoDir, appDir, broken: this.nextDeployShouldFail})
+      }
+    }
   }
 
   async createApp (name) {
@@ -236,6 +258,7 @@ module.exports = class FakeFlynnApi {
     debug('Setting initial env %o', env)
     this.release.id = 1
     Object.assign(this.release.env, env)
+    this.appVersion = this.release.env.VERSION
   }
 
   async _createAppRepo (appName) {
@@ -248,13 +271,7 @@ module.exports = class FakeFlynnApi {
     const appDir = `${this.appsDir}/${appName}`
     fs.ensureDirSync(appDir)
 
-    const preReceiveHook = this.nextDeployShouldFail
-      ? '#!/bin/sh\necho "Deploy failed" && exit 1'
-      : createPreReceiveHook(appDir)
-
-    fs.writeFileSync(`${repoDir}/hooks/pre-receive`, preReceiveHook, {
-      mode: '777'
-    })
+    writePreReceiveHook({repoDir, appDir, broken: this.nextDeployShouldFail})
     return repoDir
   }
 

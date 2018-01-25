@@ -2,8 +2,9 @@ const {expect} = require('chai')
 const debug = require('debug')('pr-apps:test:flynnApiClientMemory')
 
 module.exports = class FlynnApiClientMemory {
-  constructor (clusterDomain) {
+  constructor ({clusterDomain, fakeFlynnApi}) {
     this.clusterDomain = clusterDomain
+    this.fakeFlynnApi = fakeFlynnApi
     this.destroyAppRequests = []
     this.appNotCreated = true
     this.idSeq = 92
@@ -21,6 +22,8 @@ module.exports = class FlynnApiClientMemory {
       return result
     }, {})
     Object.assign(this.release.env, resourcesEnv, env)
+
+    this.fakeFlynnApi.appVersion = this.release.env.VERSION
 
     resources.forEach(resource => {
       const provider = {
@@ -69,7 +72,7 @@ module.exports = class FlynnApiClientMemory {
   }
 
   async createRelease (release) {
-    debug(`Creating release %o`, release)
+    debug(`Creating release %j`, release)
     expect(release.app_id).to.eq(this.app.id)
 
     this.release = release
@@ -81,8 +84,9 @@ module.exports = class FlynnApiClientMemory {
     debug(`Deploying release %s for appId %s`, releaseId, appId)
     expect(appId).to.eq(this.app.id)
     expect(releaseId).to.eq(this.release.id)
-    this.lastDeploy = {
-      release: this.release
+    // slugbuilder bump deploy does not set version
+    if (this.release.env) {
+      this.fakeFlynnApi.appVersion = this.release.env.VERSION
     }
   }
 

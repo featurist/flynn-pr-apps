@@ -8,7 +8,11 @@ However Flynn's missing few goodies one of which is [Heroku review apps](https:/
 
 ## Usage
 
-This is itself a flynn app, so first thing is to add it to your cluster.
+This is itself a flynn app, so first thing is to add it to your cluster (see below for instructions).
+
+Once up, pr-apps will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app (or stack of apps) from the linked github repo into your flynn cluster. The deployed app url will be shown on github pull request page.
+
+The deployed app will have a `VERSION` environment variable, that will be kept in sync with the github sha of what's deployed.
 
 ### Create Pr-Apps flynn app
 
@@ -31,9 +35,6 @@ Github account above should be a collaborator with `Admin` privileges (for githu
 For `GH_REPO` create a webhook for `pull_request` events and point it to `https://pr-apps.$FLYNN_CLUSTER_DOMAIN/webhook`.
 
 Set content type to `application/json` and `Disable SSL verification`. More about webhooks [here](https://developer.github.com/webhooks/securing/).
-
-
-Once up, pr-apps will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app specified in `GH_REPO` in your flynn cluster. The deployed app url will be shown on github pull request page.
 
 ### App manifest
 

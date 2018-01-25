@@ -2,13 +2,16 @@ const retry = require('trytryagain')
 const {expect} = require('chai')
 const HeadlessBrowser = require('../github/headlessBrowser')
 const retryTimeout = require('../../retryTimeout')
+const BaseActor = require('../memory/baseActor')
+const clone = require('../../../../lib/clone')
 
-module.exports = class ApiActorBase {
+module.exports = class ApiActorBase extends BaseActor {
   constructor ({
     userLocalRepo,
     currentBranch,
     fakeFlynnApi
   }) {
+    super()
     this.userLocalRepo = userLocalRepo
     this.currentBranch = currentBranch
     this.fakeFlynnApi = fakeFlynnApi
@@ -40,9 +43,8 @@ module.exports = class ApiActorBase {
     if (config.resources) {
       this.fakeFlynnApi.addResources(config.resources)
     }
-    if (config.env) {
-      this.fakeFlynnApi.addEnv(config.env)
-    }
+    const env = Object.assign({VERSION: 1}, config.env)
+    this.fakeFlynnApi.addEnv(env)
     await this.userLocalRepo.pushCurrentBranchToFlynn(gitUrl)
   }
 
@@ -94,7 +96,10 @@ module.exports = class ApiActorBase {
 
   async assertEnvironmentSet (config) {
     await retry(() => {
-      expect(this.fakeFlynnApi.lastDeploy).to.eql({
+      const lastDeploy = clone(this.fakeFlynnApi.lastDeploy)
+      delete lastDeploy.release.env.VERSION
+
+      expect(lastDeploy).to.eql({
         appName: `pr-${this.prNumber}`,
         release: {
           id: this.fakeFlynnApi.release.id,
@@ -131,20 +136,5 @@ module.exports = class ApiActorBase {
 
   shouldNotSeeFlynnApp () {
     expect(Object.keys(this.fakeFlynnApi.apps).length).to.eq(0)
-  }
-
-  getAppVersion () {
-    const postPushDeploy = this.fakeFlynnApi.lastDeploy
-    expect(postPushDeploy).to.exist // eslint-disable-line
-    return postPushDeploy.release.env.VERSION
-  }
-
-  shouldSeeAppVersion (version) {
-    expect(version).to.exist // eslint-disable-line
-  }
-
-  shouldSeeUpdatedVersion ({oldVersion, newVersion}) {
-    expect(newVersion).to.exist // eslint-disable-line
-    expect(newVersion).to.not.eq(oldVersion)
   }
 }

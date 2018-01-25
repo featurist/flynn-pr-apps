@@ -144,6 +144,7 @@ When('{actor} opens a new pull request', async function (actor) {
 })
 
 Then('{actor}\'s pr app has those environment variables set', async function (actor) {
+  await actor.shouldSeeDeploySuccessful()
   await actor.assertEnvironmentSet(this.envVars)
 })
 
@@ -193,6 +194,7 @@ resources:
 
 Then('{actor}\'s pr app has postgres and redis', async function (actor) {
   await Promise.all([
+    actor.shouldSeeDeploySuccessful(),
     actor.assertEnvironmentSet({
       FOO: 'bar',
       REDIS_URL: 'redis://stuff',

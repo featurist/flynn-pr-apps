@@ -89,14 +89,16 @@ module.exports = class GithubAssembly {
   async stop () {
     this.codeHostingServiceApi.disable()
     await Promise.all([
-      this.userLocalRepo.destroy(),
-      this.fakeFlynnApi.stop(),
       this.prAppsServer
         ? new Promise(resolve => this.prAppsServer.close(resolve))
         : Promise.resolve(),
       this.prNotifierServer
         ? new Promise(resolve => this.prNotifierServer.close(resolve))
         : Promise.resolve()
+    ])
+    await Promise.all([
+      this.userLocalRepo.destroy(),
+      this.fakeFlynnApi.stop()
     ])
   }
 

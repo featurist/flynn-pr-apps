@@ -75,15 +75,14 @@ module.exports = class LocalAssembly {
   }
 
   async stop () {
-    this.fs.rmRf(this.remoteRepoPath)
-
     await Promise.all([
-      this.userLocalRepo.destroy(),
       this.fakeFlynnApi.stop(),
       this.prAppsServer
         ? new Promise(resolve => this.prAppsServer.close(resolve))
         : Promise.resolve()
     ])
+    this.fs.rmRf(this.remoteRepoPath)
+    await this.userLocalRepo.destroy()
   }
 
   enablePrEvents () {

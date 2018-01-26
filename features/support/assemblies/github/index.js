@@ -100,6 +100,12 @@ module.exports = class GithubAssembly {
       this.userLocalRepo.destroy(),
       this.fakeFlynnApi.stop()
     ])
+
+    if (process.env.SLEEP_BETWEEN_TESTS) {
+      await new Promise((resolve, reject) => {
+        setTimeout(resolve, Number(process.env.SLEEP_BETWEEN_TESTS))
+      })
+    }
   }
 
   enablePrEvents () {

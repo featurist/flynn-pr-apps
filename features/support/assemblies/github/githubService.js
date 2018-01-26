@@ -100,11 +100,29 @@ module.exports = class GithubService {
 
   async mergePullRequest (prNumber) {
     debug('Merging pull request %s', prNumber)
-    await this.ghApi.pullRequests.merge({
-      owner: this.owner,
-      repo: this.repo,
-      number: prNumber
-    })
+    let retries = 0
+    const merge = async () => {
+      try {
+        await this.ghApi.pullRequests.merge({
+          owner: this.owner,
+          repo: this.repo,
+          number: prNumber
+        })
+      } catch (err) {
+        if (retries < 5 && err.message.match(/Base branch was modified/)) {
+          retries++
+          await new Promise((resolve, reject) => {
+            setTimeout(async () => {
+              await merge()
+              resolve()
+            }, 1000)
+          })
+        } else {
+          throw err
+        }
+      }
+    }
+    await merge()
   }
 
   async closePullRequest (prNumber) {

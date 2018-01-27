@@ -119,19 +119,14 @@ Then('{actor} sees that the deploy failed', async function (actor) {
   await actor.shouldNotSeeApp()
 })
 
-Given('{actor}\'s app needs environment variables {string} and {string}', function (actor, envVar1, envVar2) {
-  this.envVars = [envVar1, envVar2].map(pair => {
-    return pair.split('=')
-  }).reduce((result, [key, value]) => {
-    result[key] = isNaN(value) ? value : Number(value)
-    return result
-  }, {})
+Given('{actor}\'s app needs environment variables {envVar} and {envVar}', function (actor, envVar1, envVar2) {
+  this.envVars = [envVar1, envVar2]
 })
 
 When('{actor} adds configuration file specifying extra environment', async function (actor) {
   const content = `
 env:
-  ${Object.entries(this.envVars).map(([key, val]) => `${key}: ${val}`).join('\n  ')}
+  ${this.envVars.map(([key, val]) => `${key}: ${val}`).join('\n  ')}
   `
   await actor.addPrAppConfig(content)
 })
@@ -145,7 +140,10 @@ When('{actor} opens a new pull request', async function (actor) {
 
 Then('{actor}\'s pr app has those environment variables set', async function (actor) {
   await actor.shouldSeeDeploySuccessful()
-  await actor.assertEnvironmentSet(this.envVars)
+  await actor.assertEnvironmentSet(this.envVars.reduce((result, [key, value]) => {
+    result[key] = value
+    return result
+  }, {}))
 })
 
 Given('{actor}\'s app has a microservice that needs to be accessible from the main service', function (actor) {
@@ -274,4 +272,29 @@ Given('{actor} has pushed a broken change', async function (actor) {
 Then('{actor} still sees the old version', function (actor) {
   const currentVersion = actor.getAppVersion()
   actor.shouldSeeAppVersion(currentVersion, 5)
+})
+
+Given('{actor} has a pr app with an environment variable {envVar} and {envVar}', async function (actor, envVar, envVar2) {
+  const env = [envVar, envVar2].reduce((result, [key, value]) => {
+    result[key] = value
+    return result
+  }, {})
+  await actor.withExistingPrApp({env})
+  await this.assembly.enablePrEvents()
+})
+
+When('{actor} changes {envVar}, adds {envVar} and removes {string} in the configuration file', async function (actor, envVar, envVar2, string) {
+  const content = `
+env:
+  ${[envVar, envVar2].map(([key, val]) => `${key}: ${val}`).join('\n  ')}
+  `
+  await actor.addPrAppConfig(content)
+})
+
+Then('{actor}\'s app environment should change to {envVar}, {envVar} and keep {envVar}', async function (actor, envVar, envVar2, envVar3) {
+  await actor.shouldSeeDeploySuccessful()
+  await actor.assertEnvironmentSet([envVar, envVar2, envVar3].reduce((result, [key, value]) => {
+    result[key] = value
+    return result
+  }, {}))
 })

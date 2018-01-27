@@ -12,6 +12,16 @@ defineParameterType({
   }
 })
 
+defineParameterType({
+  name: 'envVar',
+  regexp: /"[^=]+=[^"]+"/,
+  transformer: (envVar) => {
+    let [name, value] = envVar.split('=').map(p => p.replace('"', ''))
+    value = isNaN(value) ? value : Number(value)
+    return [name, value]
+  }
+})
+
 async function createActor (assembly, name) {
   const actor = assembly.createActor({ name })
   await actor.start()

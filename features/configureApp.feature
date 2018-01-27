@@ -30,3 +30,9 @@ Feature: Configure Pr App environment, resources, routes, etc.
     When Frank adds redis to the configuration file
     And Frank pushes changes to the pr branch
     Then Frank's pr app has postgres and redis
+
+  Scenario: Change environment variables
+    Given Frank has a pr app with an environment variable "FOO=bar" and "STUFF=1"
+    When Frank changes "FOO=balls", adds "BAZ=jazz" and removes "STUFF" in the configuration file
+    And Frank pushes changes to the pr branch
+    Then Frank's app environment should change to "FOO=balls", "BAZ=jazz" and keep "STUFF=1"

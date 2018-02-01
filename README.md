@@ -8,7 +8,7 @@ However Flynn's missing few goodies one of which is [Heroku review apps](https:/
 
 ## Usage
 
-This is itself a flynn app, so first thing is to add it to your cluster (see below for instructions).
+This is itself a flynn app, so first thing is to add it to your cluster (see [below](#create-pr-apps-flynn-app) for instructions).
 
 Once up, pr-apps instance will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app (or stack of apps) from the linked github repo into your flynn cluster. The deployed app url will be shown on github pull request page. E.g:
 
@@ -30,7 +30,7 @@ flynn env set FLYNN_AUTH_KEY=$(flynn -a controller env get AUTH_KEY)
 git push flynn master
 ```
 
-Github account above should be a collaborator with `Admin` privileges (for github api access).
+Github account for `GH_USER_TOKEN` above should be a collaborator on `GH_REPO` with `Admin` privileges (for github api access).
 
 ### Register github webhook
 
@@ -58,7 +58,7 @@ Route key (`api-web` in the example above) refers to a service name in your `Pro
 
 ## Development
 
-It doesn't make much sense to run Pr Apps locally (even though you could with `yarn start`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](./#Create Pr-Apps flynn app) above).
+It doesn't make much sense to run Pr Apps locally (even though you could with `yarn start`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](#create-pr-apps-flynn-app) above).
 
 ## Testing
 

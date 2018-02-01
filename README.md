@@ -14,7 +14,7 @@ Once up, pr-apps instance will start watching pull requests lifecycle events. It
 
 <img width="717" alt="image" src="https://user-images.githubusercontent.com/23721/35400213-0c76ae86-01ee-11e8-801b-d3b470ee17e5.png">
 
-The deployed app will have a `VERSION` environment variable, that will be kept in sync with the github sha of what's deployed.
+The deployed app's github commit sha is stored in a `VERSION` environment variable. It will be kept in sync with every update.
 
 ### Create Pr-Apps flynn app
 

@@ -40,7 +40,7 @@ Set content type to `application/json` and `Disable SSL verification`. More abou
 
 ### App manifest
 
-Applications beyond trivial often require custom environment variables, extra resources, services and endpoints. Drop `pr-app.yaml` in the root of your project to be able to customise all this. E.g.:
+Applications beyond trivial often require custom environment variables, extra resources, services and endpoints. Drop `pr-app.yaml` at the root of your project to be able to customise all this. E.g.:
 
 ```
 env:

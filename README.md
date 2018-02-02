@@ -2,15 +2,15 @@
 
 Automatically deploy pull requests into [Flynn](https://flynn.io/) cluster. Heroku Review Apps DIY.
 
-Compared to Heroku, Flynn is a good fit in case your _monorepo_ has more than web service. Because you can deploy the entire _stack_ of services with single `git push`, whereas on Heroku you'd have no choice but to split the repo into multiple ones. Euuuww.
+Compared to Heroku, Flynn is a good fit in the case where your _monorepo_ has more than one web service. Because you can deploy the entire _stack_ of services with single `git push`, whereas on Heroku you'd have no choice but to split the repo into multiple ones. Euuuww.
 
-However Flynn's missing few goodies one of which is [Heroku review apps](https://devcenter.heroku.com/articles/github-integration-review-apps). Except it no longer does, because you can use this project. Interested? Read on.
+However Flynn is missing a few goodies one of which is [Heroku review apps](https://devcenter.heroku.com/articles/github-integration-review-apps)... until now! Flynn-pr-apps enables review apps for flynn. Interested? Read on.
 
 ## Usage
 
 This is itself a flynn app, so first thing is to add it to your cluster (see [below](#create-pr-apps-flynn-app) for instructions).
 
-Once up, pr-apps instance will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app (or stack of apps) from the linked github repo into your flynn cluster. The deployed app url will be shown on github pull request page. E.g:
+Once up, the pr-apps instance will start watching pull requests lifecycle events. It'll deploy (open pr), update (push) or destroy (close pr) the app (or stack of apps) from the linked github repo into your flynn cluster. The deployed app url will be shown on github pull request page. E.g:
 
 <img width="717" alt="image" src="https://user-images.githubusercontent.com/23721/35400213-0c76ae86-01ee-11e8-801b-d3b470ee17e5.png">
 

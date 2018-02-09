@@ -97,3 +97,6 @@ As above except with actual github (remote + api). Needs some extra environment:
 Each of the above have `-debug` counterpart (e.g. `./test-local-debug`) that starts node debugging session.
 
 Finally, run all of the above with `./test`
+
+## We're Hiring!
+Featurist provides full stack, feature driven development teams. Want to join us? Check out [our career opportunities](https://www.featurist.co.uk/careers/).

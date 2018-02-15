@@ -73,6 +73,7 @@ module.exports = class ApiActorBase extends BaseActor {
   async shouldBeAbleToPushLargeRepos () {
     const initDeploy = this.fakeFlynnApi.deploys[0]
     expect(initDeploy.release.processes.slugbuilder.resources.temp_disk.limit).to.eq(1073741824)
+    expect(initDeploy.release.processes.slugbuilder.resources.memory.limit).to.eq(2147483648)
   }
 
   async shouldSeeNewApp () {

@@ -9,6 +9,7 @@ const FlynnApiClient = require('../../../../lib/flynnApiClient')
 const ConfigLoader = require('../../../../lib/configLoader')
 const createPrAppsApp = require('../../../..')
 const createPrNotifierApp = require('./prNotifierApp')
+const GithubApi = require('./githubApi')
 const GithubService = require('./githubService')
 const GitRepo = require('./gitRepo')
 const FakeFlynnApi = require('./fakeFlynnApi')
@@ -55,12 +56,16 @@ module.exports = class GithubAssembly {
       flynnApiClient,
       configLoader: new ConfigLoader()
     })
+    const ghApi = new GithubApi({
+      repo: process.env.TEST_GH_REPO,
+      token: process.env.TEST_GH_USER_TOKEN
+    })
     this.webhookSecret = 'webhook secret'
     this.prAppsApp = createPrAppsApp({
       webhookSecret: this.webhookSecret,
       prApps
     })
-    this.prNotifierApp = createPrNotifierApp()
+    this.prNotifierApp = createPrNotifierApp({ghApi})
     this.prAppsApp.use(this.prNotifierApp)
 
     this.prAppsServer = this.prAppsApp.listen(this.port)
@@ -71,8 +76,7 @@ module.exports = class GithubAssembly {
     })
 
     this.codeHostingService = new GithubService({
-      repo: process.env.TEST_GH_REPO,
-      token: process.env.TEST_GH_USER_TOKEN,
+      ghApi,
       prEventsListener: this.prNotifierApp,
       fakeFlynnApi: this.fakeFlynnApi
     })

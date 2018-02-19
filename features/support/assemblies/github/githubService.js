@@ -1,25 +1,16 @@
-const GitHubApi = require('github')
-const GithubUrl = require('../../../../lib/githubUrl')
 const PrNotifier = require('../memory/prNotifier')
 const debug = require('debug')('pr-apps:test:githubService')
 
 module.exports = class GithubService {
-  constructor ({prEventsListener, repo, token, fakeFlynnApi}) {
-    ({owner: this.owner, repo: this.repo} = new GithubUrl({repoUrl: repo, token}))
-    this.ghApi = new GitHubApi()
-    this.ghApi.authenticate({
-      type: 'token',
-      token
-    })
+  constructor ({prEventsListener, ghApi, fakeFlynnApi}) {
+    this.ghApi = ghApi
     this.prEventsListener = prEventsListener
     this.fakeFlynnApi = fakeFlynnApi
   }
 
   async createWebhook (url, events, secret) {
     debug('Creating webhook: url=%s, events=%o', url, events)
-    await this.ghApi.repos.createHook({
-      owner: this.owner,
-      repo: this.repo,
+    await this.ghApi.createHook({
       name: 'web',
       events,
       active: true,
@@ -33,19 +24,14 @@ module.exports = class GithubService {
   }
 
   async deleteNonMasterBranches () {
-    const {data: branches} = await this.ghApi.repos.getBranches({
-      owner: this.owner,
-      repo: this.repo
-    })
+    const branches = await this.ghApi.getBranches()
     return Promise.all(
       branches.map(({name}) => {
         if (name === 'master') {
           return Promise.resolve()
         } else {
           debug('Deleting branch %s', name)
-          return this.ghApi.gitdata.deleteReference({
-            owner: this.owner,
-            repo: this.repo,
+          return this.ghApi.deleteReference({
             ref: `heads/${name}`
           })
         }
@@ -54,37 +40,25 @@ module.exports = class GithubService {
   }
 
   async closeAllPrs () {
-    const {data: prs} = await this.ghApi.pullRequests.getAll({
-      owner: this.owner,
-      repo: this.repo
-    })
+    const prs = await this.ghApi.getAllPrs()
     return Promise.all(
       prs.map(pr => this.closePullRequest(pr.number))
     )
   }
 
   async deleteWebhooks () {
-    const {data: hooks} = await this.ghApi.repos.getHooks({
-      owner: this.owner,
-      repo: this.repo
-    })
+    const hooks = await this.ghApi.getHooks()
     return Promise.all(
       hooks.map(({id}) => {
         debug('Deleting webhook %s', id)
-        return this.ghApi.repos.deleteHook({
-          owner: this.owner,
-          repo: this.repo,
-          id
-        })
+        return this.ghApi.deleteHook({id})
       })
     )
   }
 
   async openPullRequest (branch) {
     debug('Opening pull request for branch %s', branch)
-    const {data: pr} = await this.ghApi.pullRequests.create({
-      owner: this.owner,
-      repo: this.repo,
+    const pr = await this.ghApi.createPullRequest({
       title: 'Adds Feature1',
       head: branch,
       base: 'master'
@@ -93,8 +67,7 @@ module.exports = class GithubService {
       prEventsListener: this.prEventsListener,
       fakeFlynnApi: this.fakeFlynnApi,
       prNumber: pr.number,
-      branch: pr.head.ref,
-      checkUrls: false
+      branch: pr.head.ref
     })
   }
 
@@ -103,9 +76,7 @@ module.exports = class GithubService {
     let retries = 0
     const merge = async () => {
       try {
-        await this.ghApi.pullRequests.merge({
-          owner: this.owner,
-          repo: this.repo,
+        await this.ghApi.mergePullRequest({
           number: prNumber
         })
       } catch (err) {
@@ -127,28 +98,21 @@ module.exports = class GithubService {
 
   async closePullRequest (prNumber) {
     debug('Closing pull require %s', prNumber)
-    await this.ghApi.pullRequests.update({
-      owner: this.owner,
-      repo: this.repo,
-      number: prNumber,
-      state: 'closed'
+    await this.ghApi.closePullRequest({
+      number: prNumber
     })
   }
 
   async reopenPullRequest (prNumber) {
     debug('Reopening pull require %s', prNumber)
-    const {data: pr} = await this.ghApi.pullRequests.update({
-      owner: this.owner,
-      repo: this.repo,
-      number: prNumber,
-      state: 'open'
+    const pr = await this.ghApi.reopenPullRequest({
+      number: prNumber
     })
     return new PrNotifier({
       prEventsListener: this.prEventsListener,
       fakeFlynnApi: this.fakeFlynnApi,
       prNumber: pr.number,
-      branch: pr.head.ref,
-      checkUrls: false
+      branch: pr.head.ref
     })
   }
 }

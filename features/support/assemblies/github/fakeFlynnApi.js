@@ -13,18 +13,21 @@ const ShellAdapter = require('../../../../lib/shellAdapter')
 const clone = require('../../../../lib/clone')
 
 function writePreReceiveHook ({appDir, repoDir, broken}) {
+  const maybeSleep = process.env.SLOW_DOWN_DEPLOY ? 'sleep 1' : ''
   const preReceiveHook = broken
-    ? '#!/bin/sh\necho "Deploy failed" && exit 1'
-    : createPreReceiveHook(appDir)
+    ? `#!/bin/sh\necho "Deploy failed"\n${maybeSleep}\nexit 1`
+    : createPreReceiveHook(appDir, maybeSleep)
 
   fs.writeFileSync(`${repoDir}/hooks/pre-receive`, preReceiveHook, {
     mode: '777'
   })
 }
 
-function createPreReceiveHook (appDir) {
+function createPreReceiveHook (appDir, maybeSleep) {
   return `
 #!/bin/bash
+
+${maybeSleep}
 
 while read oldrev newrev refname
 do

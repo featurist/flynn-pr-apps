@@ -45,15 +45,18 @@ module.exports = class GithubAssembly {
       clusterDomain: this.clusterDomain
     })
 
-    const flynnApiClient = new FlynnApiClient({
-      clusterDomain: this.clusterDomain,
-      authKey: 'flynnApiAuthKey'
-    })
-
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      flynnApiClient,
+      flynnApiClientFactory: (clusterDomain) => {
+        return new FlynnApiClient({
+          clusterDomain,
+          authKey: 'flynnApiAuthKey'
+        })
+      },
+      appInfo: {
+        domain: `pr-apps.${this.clusterDomain}`
+      },
       configLoader: new ConfigLoader()
     })
     const ghApi = new GithubApi({
@@ -135,14 +138,16 @@ class GithubActor extends ApiActorBase {
   }
 
   async openPullRequest () {
-    this.prNotifier = await this.codeHostingService.openPullRequest(this.currentBranch)
-    this.prNumber = this.prNotifier.prNumber
+    const {prNotifier, prNumber} = await this.codeHostingService.openPullRequest(this.currentBranch)
+    this.prNotifier = prNotifier
+    this.prNumber = prNumber
     this.version = this.prNotifier.version
   }
 
   async reopenPullRequest () {
-    this.prNotifier = await this.codeHostingService.reopenPullRequest(this.prNumber)
-    this.prNumber = this.prNotifier.prNumber
+    const {prNotifier, prNumber} = await this.codeHostingService.reopenPullRequest(this.prNumber)
+    this.prNotifier = prNotifier
+    this.prNumber = prNumber
     this.version = this.prNotifier.version
   }
 

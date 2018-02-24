@@ -5,22 +5,17 @@ const retryTimeout = require('../../retryTimeout')
 module.exports = class PrNotifier {
   constructor ({
     prEventsListener,
-    branch,
-    prNumber,
-    fakeFlynnApi
+    branch
   }) {
     this.prEventsListener = prEventsListener
     this.branch = branch
-    this.prNumber = prNumber
-    this.fakeFlynnApi = fakeFlynnApi
   }
 
   async waitForDeployStarted () {
     await retry(() => {
-      const {branch, status, flynnAppUrl} = this.prEventsListener.deploymentStatusEvents[0]
+      const {branch, status} = this.prEventsListener.deploymentStatusEvents[0]
       expect(branch).to.eq(this.branch)
       expect(status).to.eq('pending')
-      expect(flynnAppUrl).to.eq(`https://dashboard.${this.fakeFlynnApi.clusterDomain}/apps/${this.fakeFlynnApi.app.id}`)
     }, {timeout: retryTimeout})
   }
 
@@ -32,10 +27,9 @@ module.exports = class PrNotifier {
 
   async waitForDeploySuccessful () {
     await retry(() => {
-      const {branch, status, deployedAppUrl} = this.prEventsListener.deploymentStatusEvents[1]
+      const {branch, status} = this.prEventsListener.deploymentStatusEvents[1]
       expect(branch).to.eq(this.branch)
       expect(status).to.eq('success')
-      expect(deployedAppUrl).to.eq(`https://pr-${this.prNumber}.${this.fakeFlynnApi.clusterDomain}`)
     }, {timeout: retryTimeout})
   }
 

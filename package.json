@@ -8,7 +8,8 @@
     "yarn": "1.3.2"
   },
   "scripts": {
-    "start": "nf start"
+    "start": "nf start",
+    "heroku-postbuild": "curl 'http://router-api.discoverd:5000/routes?parent_ref=controller/apps/$FLYNN_APP_ID' > appInfo.json"
   },
   "dependencies": {
     "@octokit/rest": "^14.0.9",

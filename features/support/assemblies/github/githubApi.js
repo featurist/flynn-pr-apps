@@ -22,54 +22,54 @@ module.exports = class GithubApi {
   }
 
   async getBranches () {
-    const {data} = await this.ghApi.repos.getBranches({...this.authOpts})
+    const {data} = await this.ghApi.repos.getBranches(Object.assign({}, this.authOpts))
     return data
   }
 
   async deleteReference (opts) {
-    await this.ghApi.gitdata.deleteReference({...opts, ...this.authOpts})
+    await this.ghApi.gitdata.deleteReference(Object.assign({}, opts, this.authOpts))
   }
 
   async getAllPrs () {
-    const {data} = await this.ghApi.pullRequests.getAll({...this.authOpts})
+    const {data} = await this.ghApi.pullRequests.getAll(Object.assign({}, this.authOpts))
     return data
   }
 
   async getHooks () {
-    const {data} = await this.ghApi.repos.getHooks({...this.authOpts})
+    const {data} = await this.ghApi.repos.getHooks(Object.assign({}, this.authOpts))
     return data
   }
 
   async deleteHook (opts) {
-    await this.ghApi.repos.deleteHook({...opts, ...this.authOpts})
+    await this.ghApi.repos.deleteHook(Object.assign({}, opts, this.authOpts))
   }
 
   async createPullRequest (opts) {
-    const {data} = await this.ghApi.pullRequests.create({...opts, ...this.authOpts})
+    const {data} = await this.ghApi.pullRequests.create(Object.assign({}, opts, this.authOpts))
     return data
   }
 
   async mergePullRequest (opts) {
-    await this.ghApi.pullRequests.merge({...opts, ...this.authOpts})
+    await this.ghApi.pullRequests.merge(Object.assign({}, opts, this.authOpts))
   }
 
   async closePullRequest (opts) {
-    await this.ghApi.pullRequests.update({...{state: 'closed'}, ...opts, ...this.authOpts})
+    await this.ghApi.pullRequests.update(Object.assign({state: 'closed'}, opts, this.authOpts))
   }
 
   async reopenPullRequest (opts) {
-    const {data} = await this.ghApi.pullRequests.update({...{state: 'open'}, ...opts, ...this.authOpts})
+    const {data} = await this.ghApi.pullRequests.update(Object.assign({state: 'open'}, opts, this.authOpts))
     return data
   }
 
   async getDeploymentStatus (opts) {
-    const {data} = await this.ghApi.repos.getDeploymentStatus({
-      ...opts,
-      ...this.authOpts,
-      headers: {
-        accept: 'application/vnd.github.ant-man-preview+json'
+    const {data} = await this.ghApi.repos.getDeploymentStatus(
+      Object.assign({}, opts, this.authOpts, {
+        headers: {
+          accept: 'application/vnd.github.ant-man-preview+json'
+        }
       }
-    })
+    ))
     return data
   }
 }

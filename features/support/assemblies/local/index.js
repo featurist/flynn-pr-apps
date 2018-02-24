@@ -43,19 +43,23 @@ module.exports = class LocalAssembly {
       clusterDomain: this.clusterDomain
     })
 
-    const flynnApiClient = new FlynnApiClient({
-      clusterDomain: this.clusterDomain,
-      authKey: 'flynnApiAuthKey'
-    })
-
     this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
 
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      flynnApiClient,
+      flynnApiClientFactory: (clusterDomain) => {
+        return new FlynnApiClient({
+          clusterDomain,
+          authKey: 'flynnApiAuthKey'
+        })
+      },
+      appInfo: {
+        domain: `pr-apps.${this.clusterDomain}`
+      },
       configLoader: new ConfigLoader()
     })
+
     this.webhookSecret = 'webhook secret'
     this.prAppsApp = createPrAppsApp({
       webhookSecret: this.webhookSecret,

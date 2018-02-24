@@ -115,15 +115,19 @@ if (!module.parent) {
     token: process.env.GH_USER_TOKEN,
     repo: process.env.GH_REPO
   })
-  const flynnApiClient = new FlynnApiClient({
-    authKey: process.env.FLYNN_AUTH_KEY,
-    clusterDomain: process.env.FLYNN_CLUSTER_DOMAIN
-  })
+
+  const flynnApiClientFactory = (clusterDomain) => {
+    return new FlynnApiClient({
+      authKey: process.env.FLYNN_AUTH_KEY,
+      clusterDomain
+    })
+  }
 
   const prApps = new PrApps({
     codeHostingServiceApi,
     scmProject,
-    flynnApiClient,
+    flynnApiClientFactory,
+    appInfo: require('./appInfo.json'),
     configLoader: new ConfigLoader()
   })
   const port = process.env.PORT

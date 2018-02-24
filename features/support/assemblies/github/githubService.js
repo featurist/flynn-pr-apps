@@ -63,12 +63,12 @@ module.exports = class GithubService {
       head: branch,
       base: 'master'
     })
-    return new PrNotifier({
+    const prNotifier = new PrNotifier({
       prEventsListener: this.prEventsListener,
       fakeFlynnApi: this.fakeFlynnApi,
-      prNumber: pr.number,
       branch: pr.head.ref
     })
+    return {prNotifier, prNumber: pr.number}
   }
 
   async mergePullRequest (prNumber) {
@@ -108,11 +108,11 @@ module.exports = class GithubService {
     const pr = await this.ghApi.reopenPullRequest({
       number: prNumber
     })
-    return new PrNotifier({
+    const prNotifier = new PrNotifier({
       prEventsListener: this.prEventsListener,
       fakeFlynnApi: this.fakeFlynnApi,
-      prNumber: pr.number,
       branch: pr.head.ref
     })
+    return {prNotifier, prNumber: pr.number}
   }
 }

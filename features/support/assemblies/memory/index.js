@@ -13,9 +13,7 @@ const ConfigLoaderMemory = require('./configLoaderMemory')
 module.exports = class MemoryAssembly {
   async setup () {}
   async start () {
-    this.clusterDomain = 'prs.example.com'
     this.fakeFlynnApi = {
-      clusterDomain: this.clusterDomain,
       notPushed: true,
       failNextDeploy () {
         this.nextDeployShouldFail = true
@@ -32,6 +30,8 @@ module.exports = class MemoryAssembly {
     this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
     const configLoader = new ConfigLoaderMemory()
 
+    this.clusterDomain = 'prs.example.com'
+
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject: new GitProject({
@@ -39,7 +39,13 @@ module.exports = class MemoryAssembly {
         remoteUrl: 'https://github.com/asdfsd/bbbb.git',
         git: new GitMemory(this.fakeFlynnApi)
       }),
-      flynnApiClient: this.flynnApiClient,
+      flynnApiClientFactory: (clusterDomain) => {
+        this.flynnApiClient.clusterDomain = clusterDomain
+        return this.flynnApiClient
+      },
+      appInfo: {
+        domain: `pr-apps.${this.clusterDomain}`
+      },
       configLoader
     })
     this.prAppsClient = new PrAppsClientMemory({

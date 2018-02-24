@@ -25,7 +25,6 @@ flynn create pr-apps
 flynn env set GH_REPO=https://github.com/some-org/some-repo.git
 flynn env set GH_USER_TOKEN=YOUR_TOKEN
 flynn env set WEBHOOK_SECRET=$(openssl rand -hex 20)
-flynn env set FLYNN_CLUSTER_DOMAIN=prs.example.com
 flynn env set FLYNN_AUTH_KEY=$(flynn -a controller env get AUTH_KEY)
 git push flynn master
 ```

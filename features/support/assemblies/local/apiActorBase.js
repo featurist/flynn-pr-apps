@@ -39,7 +39,7 @@ module.exports = class ApiActorBase extends BaseActor {
   }
 
   async createPrApp (config = {}) {
-    const {gitUrl} = await this.fakeFlynnApi.createApp(`pr-${this.prNotifier.prNumber}`)
+    const {gitUrl} = await this.fakeFlynnApi.createApp(`pr-${this.prNumber}`)
     if (config.resources) {
       this.fakeFlynnApi.addResources(config.resources)
     }
@@ -66,14 +66,8 @@ module.exports = class ApiActorBase extends BaseActor {
 
   async followDeployedAppLink () {
     const browser = new HeadlessBrowser()
-    const deployedAppUrl = `https://pr-${this.prNotifier.prNumber}.${this.fakeFlynnApi.clusterDomain}`
+    const deployedAppUrl = `https://pr-${this.prNumber}.${this.fakeFlynnApi.clusterDomain}`
     this.appIndexPageContent = await browser.visit(deployedAppUrl)
-  }
-
-  async shouldBeAbleToPushLargeRepos () {
-    const initDeploy = this.fakeFlynnApi.deploys[0]
-    expect(initDeploy.release.processes.slugbuilder.resources.temp_disk.limit).to.eq(1073741824)
-    expect(initDeploy.release.processes.slugbuilder.resources.memory.limit).to.eq(2147483648)
   }
 
   async shouldSeeNewApp () {

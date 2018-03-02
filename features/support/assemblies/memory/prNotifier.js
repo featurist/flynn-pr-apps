@@ -40,4 +40,9 @@ module.exports = class PrNotifier {
       expect(status).to.eq('failure')
     }, {timeout: retryTimeout})
   }
+
+  getDeploymentUrl () {
+    const {deploymentUrl} = this.prEventsListener.deploymentStatusEvents[this.prEventsListener.deploymentStatusEvents.length - 1]
+    return deploymentUrl
+  }
 }

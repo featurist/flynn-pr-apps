@@ -298,3 +298,11 @@ Then('{actor}\'s app environment should change to {envVar}, {envVar} and keep {e
     return result
   }, {}))
 })
+
+When('{actor} follows a deployment link from the last deploy', async function (actor) {
+  this.lastDeployment = await actor.followLastDeploymentUrl()
+})
+
+Then('{actor} sees the logs of that deploy', function (actor) {
+  actor.shouldSeeDeployLogs(this.lastDeployment)
+})

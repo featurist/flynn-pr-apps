@@ -8,6 +8,7 @@ const CodeHostingServiceApiMemory = require('./codeHostingServiceApiMemory')
 const PrAppsClientMemory = require('./prAppsClientMemory')
 const GitMemory = require('./gitMemory')
 const BaseActor = require('./baseActor')
+const DeploymentRepoMemory = require('./deploymentRepoMemory')
 const ConfigLoaderMemory = require('./configLoaderMemory')
 
 module.exports = class MemoryAssembly {
@@ -46,6 +47,7 @@ module.exports = class MemoryAssembly {
       appInfo: {
         domain: `pr-apps.${this.clusterDomain}`
       },
+      deploymentRepo: new DeploymentRepoMemory(),
       configLoader
     })
     this.prAppsClient = new PrAppsClientMemory({
@@ -123,6 +125,16 @@ class MemoryActor extends BaseActor {
 
   async shouldSeeDeployFailed () {
     await this.currentPrNotifier.waitForDeployFailed()
+  }
+
+  async followLastDeploymentUrl () {
+    const deploymentUrl = this.currentPrNotifier.getDeploymentUrl()
+    const [lastDeployId] = deploymentUrl.match(/[^/]+$/)
+    return this.prAppsClient.getDeployment(lastDeployId)
+  }
+
+  shouldSeeDeployLogs ({logs}) {
+    expect(logs).to.deep.eql(['all done'])
   }
 
   followDeployedAppLink () {}

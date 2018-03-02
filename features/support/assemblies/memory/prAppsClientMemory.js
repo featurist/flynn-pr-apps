@@ -65,4 +65,9 @@ module.exports = class PrAppsClientMemory {
       await this.prApps.destroyPrApp(prNumber)
     }
   }
+
+  async getDeployment (id) {
+    const deployment = await this.prApps.getDeployment(id)
+    return deployment
+  }
 }

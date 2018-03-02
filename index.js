@@ -10,6 +10,7 @@ const FlynnApiClient = require('./lib/flynnApiClient')
 const FsAdapter = require('./lib/fsAdapter')
 const GitAdapter = require('./lib/gitAdapter')
 const ConfigLoader = require('./lib/configLoader')
+const {renderDeployment} = require('./lib/views')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -98,6 +99,17 @@ module.exports = function ({prApps, webhookSecret}) {
         res.status(202).send(`Skipping pull_request action ${action}`)
       }
     }))
+
+  app.get('/deployments/:deploymentId', handleErrors(async (req, res) => {
+    res.set({'content-type': 'text/html'})
+
+    const deployment = await prApps.getDeployment(req.params.deploymentId)
+    if (deployment) {
+      res.send(renderDeployment(deployment))
+    } else {
+      res.status(404).end()
+    }
+  }))
 
   return app
 }

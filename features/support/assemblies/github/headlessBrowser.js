@@ -1,7 +1,9 @@
 const httpism = require('httpism')
+const cheerio = require('cheerio')
 
 module.exports = class HeadlessBrowser {
-  visit (url) {
-    return httpism.get(url)
+  async visit (url) {
+    const pageSource = await httpism.get(url)
+    return cheerio.load(pageSource)
   }
 }

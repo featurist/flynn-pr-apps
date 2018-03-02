@@ -71,17 +71,17 @@ module.exports = class ApiActorBase extends BaseActor {
   }
 
   async shouldSeeNewApp () {
-    expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1>')
+    expect(this.appIndexPageContent.text()).to.eq('Hello World!')
   }
 
   async shouldSeeUpdatedApp () {
-    expect(this.appIndexPageContent).to.eq('<h1>Hello World!</h1><p>This is Pr Apps</p>')
+    expect(this.appIndexPageContent.text()).to.eq('Hello World!This is Pr Apps')
   }
 
   async shouldNotSeeApp () {
     await retry(async () => {
       await this.followDeployedAppLink()
-      expect(this.appIndexPageContent).to.eq('Pr App Not Found')
+      expect(this.appIndexPageContent.text()).to.eq('Pr App Not Found')
     }, {timeout: retryTimeout, interval: 500})
   }
 
@@ -132,5 +132,16 @@ module.exports = class ApiActorBase extends BaseActor {
 
   shouldNotSeeFlynnApp () {
     expect(Object.keys(this.fakeFlynnApi.apps).length).to.eq(0)
+  }
+
+  async followLastDeploymentUrl () {
+    const browser = new HeadlessBrowser()
+    const deploymentUrl = this.prNotifier.getDeploymentUrl()
+    return browser.visit(deploymentUrl)
+  }
+
+  shouldSeeDeployLogs (logPage) {
+    const logs = logPage('.logChunk').text()
+    expect(logs).to.match(/\[new branch\] {6}HEAD -> master/)
   }
 }

@@ -78,7 +78,13 @@ To run memory assembly:
 ./test-memory
 ```
 
-For local assembly (memory + real fs, git, pr apps service, fake flynn service, fake github remote):
+For local assembly (memory + real fs, postgres, git, pr apps service, fake flynn service, fake github remote) you need a local postgres server and a test db that is created with this command:
+
+```
+NODE_ENV=test $(yarn bin)/sequelize db:create
+```
+
+Then:
 
 ```
 ./test-local

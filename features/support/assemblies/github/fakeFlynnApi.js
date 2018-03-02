@@ -1,8 +1,6 @@
 const express = require('express')
 const {expect} = require('chai')
 const fs = require('fs-extra')
-const https = require('https')
-const subdomain = require('express-subdomain')
 const createFlynnGitReceiveApp = require('./flynnGitReceiveApp')
 const bodyParser = require('body-parser')
 const basicauth = require('basicauth-middleware')
@@ -41,10 +39,8 @@ function resourceEnv (resource) {
 }
 
 module.exports = class FakeFlynnApi {
-  constructor ({authKey, port, clusterDomain, useSsl = true}) {
+  constructor ({authKey, clusterDomain}) {
     this.authKey = authKey
-    this.port = port
-    this.useSsl = useSsl
     this.clusterDomain = clusterDomain
     this.providerId = 40
     this.deploys = []
@@ -53,15 +49,12 @@ module.exports = class FakeFlynnApi {
       id: 0,
       env: {}
     }
-  }
 
-  async start () {
     this.reposDir = this.fs.makeTempDir()
     this.appsDir = this.fs.makeTempDir()
 
-    const app = express()
-    const deployedApps = express()
-    const flynnController = express()
+    this.deployedApps = express()
+    this.flynnController = express()
 
     const basicAuth = basicauth(
       '',
@@ -69,14 +62,10 @@ module.exports = class FakeFlynnApi {
       'Fake Flynn needs basic auth'
     )
 
-    if (debug.enabled) {
-      app.use(morgan('dev'))
-    }
+    this.flynnController.use(bodyParser.json())
+    this.flynnController.use(basicAuth)
 
-    flynnController.use(bodyParser.json())
-    flynnController.use(basicAuth)
-
-    flynnController.post('/apps', (req, res) => {
+    this.flynnController.post('/apps', (req, res) => {
       this.createApp(req.body.name).then(() => {
         res.status(201).send({id: this.app.id})
       }).catch(e => {
@@ -85,15 +74,15 @@ module.exports = class FakeFlynnApi {
       })
     })
 
-    flynnController.get('/apps', (req, res) => {
+    this.flynnController.get('/apps', (req, res) => {
       res.send([this.app])
     })
 
-    flynnController.get('/apps/:appName', (req, res) => {
+    this.flynnController.get('/apps/:appName', (req, res) => {
       res.send({id: this.app.id})
     })
 
-    flynnController.delete('/apps/:appId', (req, res) => {
+    this.flynnController.delete('/apps/:appId', (req, res) => {
       try {
         expect(req.params.appId).to.eq(this.app.id)
         const appName = this.app.name
@@ -108,7 +97,7 @@ module.exports = class FakeFlynnApi {
       }
     })
 
-    flynnController.get('/apps/:appId/release', (req, res) => {
+    this.flynnController.get('/apps/:appId/release', (req, res) => {
       if (this.release.id) {
         res.send(this.release)
       } else {
@@ -116,7 +105,7 @@ module.exports = class FakeFlynnApi {
       }
     })
 
-    flynnController.post('/releases', (req, res) => {
+    this.flynnController.post('/releases', (req, res) => {
       expect(req.body.app_id).to.eq(this.app.id)
       this.release.id++
       this.release.env = req.body.env
@@ -127,7 +116,7 @@ module.exports = class FakeFlynnApi {
       res.status(201).send(this.release)
     })
 
-    flynnController.post('/apps/:appId/deploy', (req, res) => {
+    this.flynnController.post('/apps/:appId/deploy', (req, res) => {
       expect(req.params.appId).to.eq(this.app.id)
       this.lastDeploy = {
         appName: this.app.name,
@@ -141,20 +130,20 @@ module.exports = class FakeFlynnApi {
       res.status(201).end()
     })
 
-    flynnController.get('/apps/:appId/routes', (req, res) => {
+    this.flynnController.get('/apps/:appId/routes', (req, res) => {
       expect(req.params.appId).to.eq(this.app.id)
       res.send([{
         service: 'web'
       }])
     })
 
-    flynnController.post('/apps/:appId/routes', (req, res) => {
+    this.flynnController.post('/apps/:appId/routes', (req, res) => {
       expect(req.params.appId).to.eq(this.app.id)
       this.extraRoutes = req.body
       res.status(201).end()
     })
 
-    flynnController.put('/apps/:appId/scale/:releaseId', (req, res) => {
+    this.flynnController.put('/apps/:appId/scale/:releaseId', (req, res) => {
       expect(req.params.appId).to.eq(this.app.id)
       expect(Number(req.params.releaseId)).to.eq(this.release.id)
       this.scale = req.body.new_processes
@@ -162,17 +151,17 @@ module.exports = class FakeFlynnApi {
     })
 
     this.resources = []
-    flynnController.get('/apps/:appId/resources', (req, res) => {
+    this.flynnController.get('/apps/:appId/resources', (req, res) => {
       expect(req.params.appId).to.eq(this.app.id)
       res.send(this.resources)
     })
 
     this.providers = []
-    flynnController.get('/providers/:id', (req, res) => {
+    this.flynnController.get('/providers/:id', (req, res) => {
       res.send(this.providers.find(p => p.id === Number(req.params.id)))
     })
 
-    flynnController.post('/providers/:provider/resources', (req, res) => {
+    this.flynnController.post('/providers/:provider/resources', (req, res) => {
       const provider = req.params.provider
       const resource = {
         providerName: req.params.provider,
@@ -183,12 +172,12 @@ module.exports = class FakeFlynnApi {
       res.status(201).send(resource)
     })
 
-    const flynnGitReceive = createFlynnGitReceiveApp({
+    this.flynnGitReceive = createFlynnGitReceiveApp({
       reposDir: this.reposDir
     })
-    flynnGitReceive.use(basicAuth)
+    this.flynnGitReceive.use(basicAuth)
 
-    deployedApps.get('/', (req, res) => {
+    this.deployedApps.get('/', (req, res) => {
       const appName = req.subdomains[1]
       const appIndex = `${this.appsDir}/${appName}/index.html`
       if (fs.existsSync(appIndex)) {
@@ -200,25 +189,16 @@ module.exports = class FakeFlynnApi {
       }
     })
 
-    app.use(subdomain('controller.prs', flynnController))
-    app.use(subdomain('git.prs', flynnGitReceive))
-    app.use(subdomain('*.prs', deployedApps))
-
-    if (this.useSsl) {
-      const key = fs.readFileSync(`${__dirname}/server.key`, 'utf8')
-      const cert = fs.readFileSync(`${__dirname}/server.crt`, 'utf8')
-
-      this.appServer = https.createServer({key, cert}, app)
-        .listen(this.port)
-    } else {
-      this.appServer = app.listen(this.port)
+    if (debug.enabled) {
+      this.deployedApps.use(morgan('dev'))
+      this.flynnController.use(morgan('dev'))
+      this.flynnGitReceive.use(morgan('dev'))
     }
   }
 
   async stop () {
     this.fs.rmRf(this.reposDir)
     this.fs.rmRf(this.appsDir)
-    await new Promise(resolve => this.appServer.close(resolve))
   }
 
   failNextDeploy () {

@@ -1,4 +1,16 @@
 language: node_js
+services:
+  - postgresql
+env:
+  - NODE_ENV=test
+  - DEBUG="pr-apps*"
+  - DEBUG_COLORS=yes
+  - FAIL_FAST=1
+  - RETRY_TIMEOUT=10000
+  - SLEEP_BETWEEN_TESTS=5000
+  - SLOW_DOWN_DEPLOY=1
+before_script:
+  - $(yarn bin)/sequelize db:create
 cache: yarn
 script:
   - ./test

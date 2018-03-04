@@ -13,7 +13,7 @@ module.exports = {
           model: 'Deployments'
         }
       },
-      text: Sequelize.STRING,
+      text: Sequelize.TEXT,
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

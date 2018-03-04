@@ -6,7 +6,8 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.UUIDV4
     },
     status: DataTypes.STRING,
-    deployedAppUrl: DataTypes.STRING
+    deployedAppUrl: DataTypes.STRING,
+    flynnAppUrl: DataTypes.STRING
   }, {})
 
   Deployment.associate = function (models) {

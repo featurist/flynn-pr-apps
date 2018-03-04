@@ -137,6 +137,18 @@ class MemoryActor extends BaseActor {
     expect(logs).to.deep.eql(['all done'])
   }
 
+  shouldSeeDeployStatus ({status}) {
+    expect(status).to.eq('success')
+  }
+
+  shouldSeeLinkToFlynnApp ({flynnAppUrl}) {
+    expect(flynnAppUrl).to.eq(`https://dashboard.${this.flynnApiClient.clusterDomain}/apps/${this.fakeFlynnApi.app.id}`)
+  }
+
+  shouldSeeLinkToDeployedApp ({deployedAppUrl}) {
+    expect(deployedAppUrl).to.eq(`https://pr-${this.prNumber}.${this.flynnApiClient.clusterDomain}`)
+  }
+
   followDeployedAppLink () {}
   shouldSeeNewApp () {}
   shouldBeAbleToPushLargeRepos () {}

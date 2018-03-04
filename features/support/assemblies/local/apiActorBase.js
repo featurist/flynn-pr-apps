@@ -144,4 +144,18 @@ module.exports = class ApiActorBase extends BaseActor {
     const logs = logPage('.logChunk').text()
     expect(logs).to.match(/\[new branch\] {6}HEAD -> master/)
   }
+
+  shouldSeeDeployStatus (logPage) {
+    expect(logPage('.status').text()).to.eq('success')
+  }
+
+  shouldSeeLinkToFlynnApp (logPage) {
+    expect(logPage('.flynnAppUrl').attr('href'))
+      .to.eq(`https://dashboard.${this.fakeFlynnApi.clusterDomain}/apps/${this.fakeFlynnApi.app.id}`)
+  }
+
+  shouldSeeLinkToDeployedApp (logPage) {
+    expect(logPage('.deployedAppUrl').attr('href'))
+      .to.eq(`https://pr-${this.prNumber}.${this.fakeFlynnApi.clusterDomain}`)
+  }
 }

@@ -305,4 +305,7 @@ When('{actor} follows a deployment link from the last deploy', async function (a
 
 Then('{actor} sees the logs of that deploy', function (actor) {
   actor.shouldSeeDeployLogs(this.lastDeployment)
+  actor.shouldSeeDeployStatus(this.lastDeployment)
+  actor.shouldSeeLinkToFlynnApp(this.lastDeployment)
+  actor.shouldSeeLinkToDeployedApp(this.lastDeployment)
 })

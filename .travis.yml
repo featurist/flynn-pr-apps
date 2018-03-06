@@ -2,15 +2,18 @@ language: node_js
 services:
   - postgresql
 env:
-  - NODE_ENV=test
-  - DEBUG="pr-apps*"
-  - DEBUG_COLORS=yes
-  - FAIL_FAST=1
-  - RETRY_TIMEOUT=10000
-  - SLEEP_BETWEEN_TESTS=5000
-  - SLOW_DOWN_DEPLOY=1
+  global:
+    - NODE_ENV=test
+    - DEBUG="pr-apps*"
+    - DEBUG_COLORS=yes
+    - FAIL_FAST=1
+    - RETRY_TIMEOUT=10000
+    - SLEEP_BETWEEN_TESTS=5000
+    - SLOW_DOWN_DEPLOY=1
+    - TEST_GH_REPO=https://github.com/featurist/pr-apps-test-repo.git
+    - secure: MMCwksORb5n6UqAzIJBApMCpK218d+hKpOwr3BR8y8hUc2Vn2ZylgRo2C/9DHcXfX9b08spL/POzpaNNq8gkOsTmdE0KbvVA16+Kxzy4FXka/Op2WQCjjsrHjsH6w+c1jk+H4jj5FIJ/eRcparLnAP9le4Y/nTXF6Zm/zS0fk/QbnURdCfIAlCb32hQaKMwbWeOG09AJ9Ci8vFJ+v5VV9xY3bLxHZ3ZrTzreDpOVgRKR+l7LmRdNN3/CvlS4vhf7STsVA6RhadQKmo5VmFUXelrmemEEhngfXwviE0MkHdCGIA2IztJ3oqFx9JbTjnJ8lrbH+a23UHrYN8fyAqByiUhB0oIKMeoiBPs2kQLhk5s/xXAGPAjLeLGYm/T5FN1HHx0EXCT4h6zSw5Euug2nlPaO8gtGMhPud5ZOq8rMgqqO5M51EvGHDeTQ2n4baVGNzIa6Uem3iKq9TT7Mb1Uy+igzFiE9SFuopLm7mJqzDUBmKYK+010Xr4MK+egtq9NxCU6IivECl86GBhUaNHryOZmuh7xlMDUJmAOX6aGzjVpYWGl/jpFktJs0dDAzr6HLYEHA6zrlqU1uGCmwKwYl1MkJFJU3Q09mw0EXHuqUpusp5OzjlSGtoxszIYB0DMMcw3ixOH8FLy0SXKZ2rZzy6G0IN4PewJHb452JkTxV1tc=
 before_script:
-  - $(yarn bin)/sequelize db:create
+  - "$(yarn bin)/sequelize db:create"
 cache: yarn
 script:
-  - ./test
+  - "./test"

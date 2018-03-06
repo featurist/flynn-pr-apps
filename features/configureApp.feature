@@ -23,7 +23,7 @@ Feature: Configure Pr App environment, resources, routes, etc.
     Given Frank's app needs extra configuration
     When Frank adds configuration file with a typo
     And Frank opens a new pull request
-    Then Frank sees that the deploy failed
+    Then Frank sees that the deploy failed instantly
 
   Scenario: Add new resource to existing pr app
     Given Frank has a pr app with postgres

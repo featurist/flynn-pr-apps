@@ -60,8 +60,8 @@ module.exports = class ApiActorBase extends BaseActor {
     await this.prNotifier.waitForDeploySuccessful()
   }
 
-  async shouldSeeDeployFailed () {
-    await this.prNotifier.waitForDeployFailed()
+  async shouldSeeDeployFailed (options) {
+    await this.prNotifier.waitForDeployFailed(options)
   }
 
   async followDeployedAppLink () {

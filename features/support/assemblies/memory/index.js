@@ -123,8 +123,8 @@ class MemoryActor extends BaseActor {
     await this.currentPrNotifier.waitForDeploySuccessful()
   }
 
-  async shouldSeeDeployFailed () {
-    await this.currentPrNotifier.waitForDeployFailed()
+  async shouldSeeDeployFailed (options) {
+    await this.currentPrNotifier.waitForDeployFailed(options)
   }
 
   async followLastDeploymentUrl () {

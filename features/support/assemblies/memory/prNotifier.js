@@ -33,9 +33,9 @@ module.exports = class PrNotifier {
     }, {timeout: retryTimeout})
   }
 
-  async waitForDeployFailed () {
+  async waitForDeployFailed ({instantly} = {}) {
     await retry(() => {
-      const {branch, status} = this.prEventsListener.deploymentStatusEvents[1]
+      const {branch, status} = this.prEventsListener.deploymentStatusEvents[instantly ? 0 : 1]
       expect(branch).to.eq(this.branch)
       expect(status).to.eq('failure')
     }, {timeout: retryTimeout})

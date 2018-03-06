@@ -119,6 +119,11 @@ Then('{actor} sees that the deploy failed', async function (actor) {
   await actor.shouldNotSeeApp()
 })
 
+Then('{actor} sees that the deploy failed instantly', async function (actor) {
+  await actor.shouldSeeDeployFailed({instantly: true})
+  await actor.shouldNotSeeApp()
+})
+
 Given('{actor}\'s app needs environment variables {envVar} and {envVar}', function (actor, envVar1, envVar2) {
   this.envVars = [envVar1, envVar2]
 })
@@ -135,7 +140,6 @@ When('{actor} opens a new pull request', async function (actor) {
   await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
-  await actor.shouldSeeDeployStarted()
 })
 
 Then('{actor}\'s pr app has those environment variables set', async function (actor) {

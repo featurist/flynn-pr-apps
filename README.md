@@ -22,6 +22,7 @@ The deployed app's github commit sha is stored in a `VERSION` environment variab
 git clone https://github.com/featurist/flynn-pr-apps
 cd flynn-pr-apps
 flynn create pr-apps
+flynn resource add postgres
 flynn env set GH_REPO=https://github.com/some-org/some-repo.git
 flynn env set GH_USER_TOKEN=YOUR_TOKEN
 flynn env set WEBHOOK_SECRET=$(openssl rand -hex 20)

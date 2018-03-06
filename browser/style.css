@@ -1,7 +1,16 @@
+body {
+  margin-top: 0;
+}
+
 .deployInfo {
-  margin-top: 20px;
+  padding-top: 10px;
+  padding-bottom: 10px;
   align-items: center;
   display: flex;
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid lightgrey;
+  background-color: white;
 }
 
 .deployInfo div:not(:first-child) {
@@ -18,12 +27,13 @@
   color: white;
   border-radius: 5px;
   text-align: center;
+  letter-spacing: 2px;
 }
 .status.success {
-  background-color: green;
+  background-color: mediumseagreen;
 }
 .status.failure {
-  background-color: red;
+  background-color: orangered;
 }
 .status.pending {
   background-color: orange;

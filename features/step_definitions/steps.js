@@ -124,6 +124,11 @@ Then('{actor} sees that the deploy failed instantly', async function (actor) {
   await actor.shouldNotSeeApp()
 })
 
+Then('{actor} can see the validation error', async function (actor) {
+  const lastDeployment = await actor.followLastDeploymentUrl()
+  actor.shouldSeeValidationError(lastDeployment)
+})
+
 Given('{actor}\'s app needs environment variables {envVar} and {envVar}', function (actor, envVar1, envVar2) {
   this.envVars = [envVar1, envVar2]
 })

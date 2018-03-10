@@ -145,6 +145,11 @@ module.exports = class ApiActorBase extends BaseActor {
     expect(logs).to.match(/\[new branch\] {6}HEAD -> master/)
   }
 
+  shouldSeeValidationError (logPage) {
+    const logs = logPage('.logChunk').text()
+    expect(logs).to.match(/TypeError: Expected a value/)
+  }
+
   shouldSeeDeployStatus (logPage) {
     expect(logPage('.status').text()).to.eq('success')
   }

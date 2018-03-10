@@ -137,6 +137,10 @@ class MemoryActor extends BaseActor {
     expect(logs).to.deep.eql(['all done'])
   }
 
+  shouldSeeValidationError ({logs}) {
+    expect(logs[0]).to.match(/TypeError: Expected a value/)
+  }
+
   shouldSeeDeployStatus ({status}) {
     expect(status).to.eq('success')
   }

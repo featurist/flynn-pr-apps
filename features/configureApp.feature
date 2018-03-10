@@ -24,6 +24,7 @@ Feature: Configure Pr App environment, resources, routes, etc.
     When Frank adds configuration file with a typo
     And Frank opens a new pull request
     Then Frank sees that the deploy failed instantly
+    And Frank can see the validation error
 
   Scenario: Add new resource to existing pr app
     Given Frank has a pr app with postgres

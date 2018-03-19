@@ -43,6 +43,7 @@ module.exports = class GitRepo {
       await this.sh('git commit -m "more changes"')
       await this.sh(`git push origin ${branch}`)
     } else {
+      await this.sh('git checkout master')
       await this.sh(`git checkout -b ${branch}`)
       this.currentBranch = branch
 

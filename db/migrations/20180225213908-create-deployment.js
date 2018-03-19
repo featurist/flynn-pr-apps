@@ -10,6 +10,7 @@ module.exports = {
       status: Sequelize.STRING,
       deployedAppUrl: Sequelize.STRING,
       flynnAppUrl: Sequelize.STRING,
+      appName: Sequelize.STRING,
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE

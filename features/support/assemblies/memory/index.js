@@ -15,6 +15,11 @@ module.exports = class MemoryAssembly {
   async setup () {}
   async start () {
     this.fakeFlynnApi = {
+      apps: new Set(),
+      firstApp () {
+        return Array.from(this.apps)[0]
+      },
+      providers: [],
       notPushed: true,
       failNextDeploy () {
         this.nextDeployShouldFail = true
@@ -90,8 +95,8 @@ class MemoryActor extends BaseActor {
 
   withClosedPullRequest () {}
 
-  async openPullRequest () {
-    this.currentPrNotifier = await this.prAppsClient.openPullRequest(this.currentBranch, this.prNumber, 1)
+  async openPullRequest ({prNumber = this.prNumber, branch = this.currentBranch} = {}) {
+    this.currentPrNotifier = await this.prAppsClient.openPullRequest(branch, prNumber, 1)
   }
 
   async reopenPullRequest () {
@@ -127,14 +132,24 @@ class MemoryActor extends BaseActor {
     await this.currentPrNotifier.waitForDeployFailed(options)
   }
 
-  async followLastDeploymentUrl () {
-    const deploymentUrl = this.currentPrNotifier.getDeploymentUrl()
-    const [lastDeployId] = deploymentUrl.match(/[^/]+$/)
+  getLastDeploymentUrl () {
+    return this.currentPrNotifier.getDeploymentUrl()
+  }
+
+  async followLastDeploymentUrl (url) {
+    url = url || this.getLastDeploymentUrl()
+    const [lastDeployId] = url.match(/[^/]+$/)
     return this.prAppsClient.getDeployment(lastDeployId)
   }
 
   shouldSeeDeployLogs ({logs}) {
     expect(logs).to.deep.eql(['all done'])
+  }
+
+  async shouldNotSeeDeployLogs (url) {
+    const [lastDeployId] = url.match(/[^/]+$/)
+    const deployment = await this.prAppsClient.getDeployment(lastDeployId)
+    expect(deployment).to.be.eq(undefined)
   }
 
   shouldSeeValidationError ({logs}) {
@@ -146,7 +161,9 @@ class MemoryActor extends BaseActor {
   }
 
   shouldSeeLinkToFlynnApp ({flynnAppUrl}) {
-    expect(flynnAppUrl).to.eq(`https://dashboard.${this.flynnApiClient.clusterDomain}/apps/${this.fakeFlynnApi.app.id}`)
+    expect(flynnAppUrl).to.eq(
+      `https://dashboard.${this.flynnApiClient.clusterDomain}/apps/${this.fakeFlynnApi.firstApp().id}`
+    )
   }
 
   shouldSeeLinkToDeployedApp ({deployedAppUrl}) {
@@ -155,11 +172,10 @@ class MemoryActor extends BaseActor {
 
   followDeployedAppLink () {}
   shouldSeeNewApp () {}
-  shouldBeAbleToPushLargeRepos () {}
   shouldSeeUpdatedApp () {}
-  shouldNotSeeApp () {
+  shouldNotSeeApp (appName = `pr-${this.prNumber}`) {
     expect(
-      this.fakeFlynnApi.app === 'destroyed' ||
+      this.flynnApiClient.findAppByName(appName) === undefined ||
       this.fakeFlynnApi.notPushed
     ).to.eq(true)
   }
@@ -169,11 +185,11 @@ class MemoryActor extends BaseActor {
   }
 
   assertEnvironmentSet (env) {
-    expect(omit(this.fakeFlynnApi.release.env, 'VERSION')).to.eql(env)
+    expect(omit(this.fakeFlynnApi.firstApp().release.env, 'VERSION')).to.eql(env)
   }
 
   assertServiceIsUp ({service, domain}) {
-    expect(this.fakeFlynnApi.routes).to.deep.include({
+    expect(this.fakeFlynnApi.firstApp().routes).to.deep.include({
       type: 'http',
       service,
       domain
@@ -181,7 +197,7 @@ class MemoryActor extends BaseActor {
   }
 
   assertResources (resources) {
-    expect(this.fakeFlynnApi.resources.map(r => {
+    expect(this.fakeFlynnApi.firstApp().resources.map(r => {
       const {name} = this.fakeFlynnApi.providers.find(p => p.id === r.provider)
       return name
     }).sort()).to.eql(resources.sort())

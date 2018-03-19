@@ -11,7 +11,8 @@ module.exports = {
         type: Sequelize.UUID,
         references: {
           model: 'Deployments'
-        }
+        },
+        onDelete: 'cascade'
       },
       text: Sequelize.TEXT,
       createdAt: {

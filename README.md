@@ -63,7 +63,7 @@ It doesn't make much sense to run Pr Apps locally (even though you could with `y
 The only exception to the above is working on "deployment logs" page. To get there you need a test deployment. Generate one with:
 
 ```
-$(yarn bin)/sequelize db:seed:all
+yarn sequelize db:seed:all
 ```
 
 Then `yarn dev` and then open http://localhost:5599/deployments/a4d8ffe3-7a6d-47a9-aa69-6d62cc436e0e
@@ -90,7 +90,7 @@ To run memory assembly:
 For local assembly (memory + real fs, postgres, git, pr apps service, fake flynn service, fake github remote) you need a local postgres server and a test db that is created with this command:
 
 ```
-NODE_ENV=test $(yarn bin)/sequelize db:create
+NODE_ENV=test yarn sequelize db:create
 ```
 
 Then:

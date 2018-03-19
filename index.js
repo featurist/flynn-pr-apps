@@ -104,7 +104,7 @@ module.exports = function ({prApps, webhookSecret}) {
     }))
 
   app.get('/deployments/:deploymentId', handleErrors(async (req, res) => {
-    res.set({'content-type': 'text/html'})
+    res.type('html')
 
     const deployment = await prApps.getDeployment(req.params.deploymentId)
     if (deployment) {

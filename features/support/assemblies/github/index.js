@@ -155,11 +155,12 @@ class GithubActor extends ApiActorBase {
     this.codeHostingService = codeHostingService
   }
 
-  async openPullRequest () {
-    const {prNotifier, prNumber} = await this.codeHostingService.openPullRequest(this.currentBranch)
+  async openPullRequest ({branch = this.currentBranch} = {}) {
+    const {prNotifier, prNumber} = await this.codeHostingService.openPullRequest(branch)
     this.prNotifier = prNotifier
     this.prNumber = prNumber
     this.version = this.prNotifier.version
+    return prNumber
   }
 
   async reopenPullRequest () {
@@ -173,8 +174,8 @@ class GithubActor extends ApiActorBase {
     this.version = await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
   }
 
-  async mergePullRequest () {
-    await this.codeHostingService.mergePullRequest(this.prNumber)
+  async mergePullRequest (prNumber = this.prNumber) {
+    await this.codeHostingService.mergePullRequest(prNumber)
   }
 
   async closePullRequest () {

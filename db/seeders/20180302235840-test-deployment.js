@@ -231,6 +231,7 @@ module.exports = {
       id: 'a4d8ffe3-7a6d-47a9-aa69-6d62cc436e0e',
       status: 'success',
       deployedAppUrl: 'http://example.com/app',
+      appName: 'pr-3456',
       flynnAppUrl: 'http://dashboard.prs.example.com/apps/234',
       createdAt: new Date(),
       updatedAt: new Date()

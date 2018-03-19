@@ -318,3 +318,37 @@ Then('{actor} sees the logs of that deploy', function (actor) {
   actor.shouldSeeLinkToFlynnApp(this.lastDeployment)
   actor.shouldSeeLinkToDeployedApp(this.lastDeployment)
 })
+
+Given('{actor} opened two pull requests', async function (actor) {
+  await this.assembly.enablePrEvents()
+
+  await actor.pushBranch()
+  this.pr1Number = await actor.openPullRequest()
+  await actor.shouldSeeDeploySuccessful()
+
+  this.deployLogUrl1 = actor.getLastDeploymentUrl()
+  actor.shouldSeeDeployLogs(
+    await actor.followLastDeploymentUrl(this.deployLogUrl1)
+  )
+
+  await actor.pushBranch('Feature2')
+  await actor.openPullRequest({prNumber: 24, branch: 'Feature2'})
+  await actor.shouldSeeDeploySuccessful()
+
+  this.deployLogUrl2 = actor.getLastDeploymentUrl()
+  actor.shouldSeeDeployLogs(
+    await actor.followLastDeploymentUrl(this.deployLogUrl2)
+  )
+})
+
+When('{actor} closes one of them', async function (actor) {
+  await actor.mergePullRequest(this.pr1Number)
+  await actor.shouldNotSeeApp(`pr-${this.pr1Number}`)
+})
+
+Then('{actor} can only see deploy logs of the other one', async function (actor) {
+  await actor.shouldNotSeeDeployLogs(this.deployLogUrl1)
+  actor.shouldSeeDeployLogs(
+    await actor.followLastDeploymentUrl(this.deployLogUrl2)
+  )
+})

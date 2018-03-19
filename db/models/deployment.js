@@ -6,6 +6,7 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: DataTypes.UUIDV4
     },
     status: DataTypes.STRING,
+    appName: DataTypes.STRING,
     deployedAppUrl: DataTypes.STRING,
     flynnAppUrl: DataTypes.STRING
   }, {})

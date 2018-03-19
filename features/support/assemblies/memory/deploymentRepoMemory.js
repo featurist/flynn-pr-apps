@@ -22,4 +22,12 @@ module.exports = class DeploymentRepoMemory {
   save (deployment) {
     this.store[deployment.id] = deployment
   }
+
+  deleteAppDeployments (appName) {
+    Object.entries(this.store).forEach(([id, d]) => {
+      if (d.appName === appName) {
+        delete this.store[id]
+      }
+    })
+  }
 }

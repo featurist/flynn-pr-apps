@@ -124,27 +124,27 @@ class LocalActor extends ApiActorBase {
     this.prAppsClient = prAppsClient
     this.codeHostingServiceApi = codeHostingServiceApi
     this.prNumber = 23
-
-    this.prNotifier = new PrNotifier({
-      prEventsListener: codeHostingServiceApi,
-      branch: this.currentBranch,
-      prNumber: this.prNumber,
-      fakeFlynnApi: this.fakeFlynnApi
-    })
   }
 
-  async openPullRequest () {
+  async openPullRequest ({prNumber = this.prNumber, branch = this.currentBranch} = {}) {
     const body = {
       action: 'opened',
-      number: this.prNumber,
+      number: prNumber,
       pull_request: {
         head: {
-          ref: this.currentBranch,
+          ref: branch,
           sha: 1
         }
       }
     }
     await this.prAppsClient.post('/webhook', body)
+
+    this.prNotifier = new PrNotifier({
+      prEventsListener: this.codeHostingServiceApi,
+      branch,
+      prNumber: prNumber,
+      fakeFlynnApi: this.fakeFlynnApi
+    })
   }
 
   async reopenPullRequest () {
@@ -159,6 +159,13 @@ class LocalActor extends ApiActorBase {
       }
     }
     await this.prAppsClient.post('/webhook', body)
+
+    this.prNotifier = new PrNotifier({
+      prEventsListener: this.codeHostingServiceApi,
+      branch: this.currentBranch,
+      prNumber: this.prNumber,
+      fakeFlynnApi: this.fakeFlynnApi
+    })
   }
 
   async mergePullRequest () {

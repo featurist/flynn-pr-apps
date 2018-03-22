@@ -7,7 +7,7 @@ env:
     - DEBUG="pr-apps*"
     - DEBUG_COLORS=yes
     - FAIL_FAST=1
-    - RETRY_TIMEOUT=10000
+    - RETRY_TIMEOUT=90000
     - SLEEP_BETWEEN_TESTS=5000
     - SLOW_DOWN_DEPLOY=1
     - TEST_GH_REPO=https://github.com/featurist/pr-apps-test-repo.git

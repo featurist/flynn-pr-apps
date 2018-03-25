@@ -149,7 +149,7 @@ if (!module.parent) {
     scmProject,
     flynnApiClientFactory,
     deploymentRepo,
-    appInfo: require('./appInfo.json'),
+    appInfo: require('./appInfo.json')[0],
     configLoader: new ConfigLoader()
   })
   const port = process.env.PORT || 5599

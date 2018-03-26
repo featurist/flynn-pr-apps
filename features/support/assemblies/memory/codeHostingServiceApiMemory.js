@@ -12,12 +12,12 @@ module.exports = class CodeHostingServiceApiMemory {
     }
   }
 
-  async updateDeploymentStatus (deployment, status, {deployedAppUrl, flynnAppUrl}) {
+  async updateDeploymentStatus (deployment, {status, deployedAppUrl, deploymentUrl}) {
     const update = {
       branch: deployment.branch,
       status,
       deployedAppUrl,
-      flynnAppUrl
+      deploymentUrl
     }
     debug('Updating deployment status %o', update)
     this.deploymentStatusEvents.push(update)

@@ -1,8 +1,6 @@
 const express = require('express')
 const {expect} = require('chai')
 const fs = require('fs-extra')
-const https = require('https')
-const subdomain = require('express-subdomain')
 const createFlynnGitReceiveApp = require('./flynnGitReceiveApp')
 const bodyParser = require('body-parser')
 const basicauth = require('basicauth-middleware')
@@ -11,6 +9,9 @@ const debug = require('debug')('pr-apps:test:fakeFlynnApi')
 const FsAdapter = require('../../../../lib/fsAdapter')
 const ShellAdapter = require('../../../../lib/shellAdapter')
 const clone = require('../../../../lib/clone')
+const FlynnApp = require('../memory/flynnApp')
+
+let idSeq = 87
 
 function writePreReceiveHook ({appDir, repoDir, broken}) {
   const maybeSleep = process.env.SLOW_DOWN_DEPLOY ? 'sleep 1' : ''
@@ -41,27 +42,18 @@ function resourceEnv (resource) {
 }
 
 module.exports = class FakeFlynnApi {
-  constructor ({authKey, port, clusterDomain, useSsl = true}) {
+  constructor ({authKey, clusterDomain}) {
     this.authKey = authKey
-    this.port = port
-    this.useSsl = useSsl
     this.clusterDomain = clusterDomain
-    this.providerId = 40
-    this.deploys = []
+    this.apps = new Set()
+    this.providers = []
     this.fs = new FsAdapter()
-    this.release = {
-      id: 0,
-      env: {}
-    }
-  }
 
-  async start () {
     this.reposDir = this.fs.makeTempDir()
     this.appsDir = this.fs.makeTempDir()
 
-    const app = express()
-    const deployedApps = express()
-    const flynnController = express()
+    this.deployedApps = express()
+    this.flynnController = express()
 
     const basicAuth = basicauth(
       '',
@@ -69,38 +61,34 @@ module.exports = class FakeFlynnApi {
       'Fake Flynn needs basic auth'
     )
 
-    if (debug.enabled) {
-      app.use(morgan('dev'))
-    }
+    this.flynnController.use(bodyParser.json())
+    this.flynnController.use(basicAuth)
 
-    flynnController.use(bodyParser.json())
-    flynnController.use(basicAuth)
-
-    flynnController.post('/apps', (req, res) => {
-      this.createApp(req.body.name).then(() => {
-        res.status(201).send({id: this.app.id})
+    this.flynnController.post('/apps', (req, res) => {
+      this.createApp(req.body.name).then(({app}) => {
+        res.status(201).send({id: app.id})
       }).catch(e => {
         console.error(e.stack)
         res.status(500).end()
       })
     })
 
-    flynnController.get('/apps', (req, res) => {
-      res.send([this.app])
+    this.flynnController.get('/apps', (req, res) => {
+      res.send(Array.from(this.apps))
     })
 
-    flynnController.get('/apps/:appName', (req, res) => {
-      res.send({id: this.app.id})
+    this.flynnController.get('/apps/:appName', (req, res) => {
+      const {id} = this.findAppByName(req.params.appName)
+      res.send({id})
     })
 
-    flynnController.delete('/apps/:appId', (req, res) => {
+    this.flynnController.delete('/apps/:appId', (req, res) => {
       try {
-        expect(req.params.appId).to.eq(this.app.id)
-        const appName = this.app.name
-        debug('Destroying app %s', appName)
-        delete this.app
-        this._destroyAppRepo(appName)
-        this._removeAppWebLocation(appName)
+        const app = this._getApp(req.params.appId)
+        debug('Destroying app %s', app.name)
+        this._destroyAppRepo(app.name)
+        this._removeAppWebLocation(app.name)
+        delete this.apps.delete(app)
         res.status(200).end()
       } catch (e) {
         console.error(e.stack)
@@ -108,87 +96,93 @@ module.exports = class FakeFlynnApi {
       }
     })
 
-    flynnController.get('/apps/:appId/release', (req, res) => {
-      if (this.release.id) {
-        res.send(this.release)
+    this.flynnController.get('/apps/:appId/release', (req, res) => {
+      const app = this._getApp(req.params.appId)
+      if (app.release.id) {
+        res.send(app.release)
       } else {
         res.status(404).end()
       }
     })
 
-    flynnController.post('/releases', (req, res) => {
-      expect(req.body.app_id).to.eq(this.app.id)
-      this.release.id++
-      this.release.env = req.body.env
-      this.release.appName = this.app.name
+    this.flynnController.post('/releases', (req, res) => {
+      const app = this._getApp(req.body.app_id)
+      const release = {
+        id: idSeq++,
+        env: req.body.env,
+        appName: app.name
+      }
       if (req.body.processes) {
-        this.release.processes = req.body.processes
+        release.processes = req.body.processes
       }
-      res.status(201).send(this.release)
+      app.release = release
+      res.status(201).send(release)
     })
 
-    flynnController.post('/apps/:appId/deploy', (req, res) => {
-      expect(req.params.appId).to.eq(this.app.id)
-      this.lastDeploy = {
-        appName: this.app.name,
-        release: this.release
+    this.flynnController.post('/apps/:appId/deploy', (req, res) => {
+      const app = this._getApp(req.params.appId)
+      const deploy = {
+        appName: app.name,
+        release: app.release
       }
-      this.deploys.push(clone(this.lastDeploy))
+      app.deploys.push(clone(deploy))
       // slugbuilder bump deploy does not set version
-      if (this.release.env) {
-        this.appVersion = this.release.env.VERSION
+      if (app.release.env) {
+        app.appVersion = app.release.env.VERSION
       }
       res.status(201).end()
     })
 
-    flynnController.get('/apps/:appId/routes', (req, res) => {
-      expect(req.params.appId).to.eq(this.app.id)
-      res.send([{
-        service: 'web'
-      }])
+    this.flynnController.get('/apps/:appId/routes', (req, res) => {
+      const app = this._getApp(req.params.appId)
+      res.send(app.routes)
     })
 
-    flynnController.post('/apps/:appId/routes', (req, res) => {
-      expect(req.params.appId).to.eq(this.app.id)
-      this.extraRoutes = req.body
+    this.flynnController.post('/apps/:appId/routes', (req, res) => {
+      const app = this._getApp(req.params.appId)
+      app.routes.push(req.body)
       res.status(201).end()
     })
 
-    flynnController.put('/apps/:appId/scale/:releaseId', (req, res) => {
-      expect(req.params.appId).to.eq(this.app.id)
-      expect(Number(req.params.releaseId)).to.eq(this.release.id)
-      this.scale = req.body.new_processes
+    this.flynnController.put('/apps/:appId/scale/:releaseId', (req, res) => {
+      const app = this._getApp(req.params.appId)
+      expect(Number(req.params.releaseId)).to.eq(app.release.id)
+      app.scale = req.body.new_processes
       res.status(200).end()
     })
 
-    this.resources = []
-    flynnController.get('/apps/:appId/resources', (req, res) => {
-      expect(req.params.appId).to.eq(this.app.id)
-      res.send(this.resources)
+    this.flynnController.get('/apps/:appId/resources', (req, res) => {
+      const app = this._getApp(req.params.appId)
+      res.send(app.resources)
     })
 
-    this.providers = []
-    flynnController.get('/providers/:id', (req, res) => {
+    this.flynnController.get('/providers/:id', (req, res) => {
       res.send(this.providers.find(p => p.id === Number(req.params.id)))
     })
 
-    flynnController.post('/providers/:provider/resources', (req, res) => {
+    this.flynnController.post('/providers/:provider/resources', (req, res) => {
       const provider = req.params.provider
+      const firstApp = this.firstApp()
+
+      const apps = req.body.apps.map(id =>
+        firstApp.id === id ? firstApp.name : null
+      ).filter(_ => _)
+
       const resource = {
         providerName: req.params.provider,
-        apps: req.body.apps.map(id => this.app.id === id ? this.app.name : null).filter(_ => _),
+        apps,
         env: resourceEnv(provider)
       }
-      this.resources.push(resource)
+      firstApp.resources.push(resource)
       res.status(201).send(resource)
     })
 
-    const flynnGitReceive = createFlynnGitReceiveApp({
+    this.flynnGitReceive = createFlynnGitReceiveApp({
       reposDir: this.reposDir
     })
-    flynnGitReceive.use(basicAuth)
+    this.flynnGitReceive.use(basicAuth)
 
-    deployedApps.get('/', (req, res) => {
+    this.deployedApps.get('/', (req, res) => {
       const appName = req.subdomains[1]
       const appIndex = `${this.appsDir}/${appName}/index.html`
       if (fs.existsSync(appIndex)) {
@@ -200,32 +194,24 @@ module.exports = class FakeFlynnApi {
       }
     })
 
-    app.use(subdomain('controller.prs', flynnController))
-    app.use(subdomain('git.prs', flynnGitReceive))
-    app.use(subdomain('*.prs', deployedApps))
-
-    if (this.useSsl) {
-      const key = fs.readFileSync(`${__dirname}/server.key`, 'utf8')
-      const cert = fs.readFileSync(`${__dirname}/server.crt`, 'utf8')
-
-      this.appServer = https.createServer({key, cert}, app)
-        .listen(this.port)
-    } else {
-      this.appServer = app.listen(this.port)
+    if (debug.enabled) {
+      this.deployedApps.use(morgan('dev'))
+      this.flynnController.use(morgan('dev'))
+      this.flynnGitReceive.use(morgan('dev'))
     }
   }
 
   async stop () {
     this.fs.rmRf(this.reposDir)
     this.fs.rmRf(this.appsDir)
-    await new Promise(resolve => this.appServer.close(resolve))
   }
 
   failNextDeploy () {
     this.nextDeployShouldFail = true
-    if (this.app) {
-      const repoDir = `${this.reposDir}/${this.app.name}.git`
-      const appDir = `${this.appsDir}/${this.app.name}`
+    const app = this.firstApp()
+    if (app) {
+      const repoDir = `${this.reposDir}/${app.name}.git`
+      const appDir = `${this.appsDir}/${app.name}`
 
       if (fs.existsSync(repoDir)) {
         writePreReceiveHook({repoDir, appDir, broken: this.nextDeployShouldFail})
@@ -236,23 +222,22 @@ module.exports = class FakeFlynnApi {
   async createApp (name) {
     debug('Creating app %s', name)
     const repoDir = await this._createAppRepo(name)
-    this.app = {
-      id: 'someAppId',
-      name
-    }
+    const app = new FlynnApp({name})
+    this.apps.add(app)
     return {
-      gitUrl: `file://${repoDir}`
+      gitUrl: `file://${repoDir}`,
+      app
     }
   }
 
-  async addResources (resources) {
+  async addResources (app, resources) {
     debug('Adding initial resources %o', resources)
     resources.forEach(r => {
-      const providerId = ++this.providerId
-      this.release.id = 1
+      const providerId = idSeq++
+      app.release.id = 1
       this.providers.push({name: r, id: providerId})
-      this.resources.push({
-        apps: [this.app.name],
+      app.resources.push({
+        apps: [app.name],
         provider: providerId,
         providerName: r,
         env: resourceEnv(r)
@@ -260,11 +245,15 @@ module.exports = class FakeFlynnApi {
     })
   }
 
-  addEnv (env) {
+  addEnv (app, env) {
     debug('Setting initial env %o', env)
-    this.release.id = 1
-    Object.assign(this.release.env, env)
-    this.appVersion = this.release.env.VERSION
+    app.release.id = 1
+    Object.assign(app.release.env, env)
+    app.appVersion = app.release.env.VERSION
+  }
+
+  firstApp () {
+    return Array.from(this.apps)[0]
   }
 
   async _createAppRepo (appName) {
@@ -279,6 +268,10 @@ module.exports = class FakeFlynnApi {
 
     writePreReceiveHook({repoDir, appDir, broken: this.nextDeployShouldFail})
     return repoDir
+  }
+
+  findAppByName (appName) {
+    return Array.from(this.apps).find(({name}) => name === appName)
   }
 
   _destroyAppRepo (appName) {
@@ -297,5 +290,9 @@ module.exports = class FakeFlynnApi {
       throw new Error(`Attempting to remove non-existing web location ${dir}`)
     }
     fs.removeSync(dir)
+  }
+
+  _getApp (appId) {
+    return Array.from(this.apps).find(({id}) => id === Number(appId))
   }
 }

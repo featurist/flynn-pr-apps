@@ -1,4 +1,5 @@
 export DEBUG=${DEBUG:-pr-apps*}
+export NODE_ENV=test
 
 function cucumber_normal {
   if [[ $COVERAGE ]]; then

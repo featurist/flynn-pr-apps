@@ -9,11 +9,11 @@ module.exports = function ({ghApi}) {
     ghApi.getDeploymentStatus({
       id: body.deployment.id,
       status_id: body.deployment_status.id
-    }).then(({log_url: flynnAppUrl, environment_url: deployedAppUrl}) => {
+    }).then(({log_url: deploymentUrl, environment_url: deployedAppUrl}) => {
       const event = {
         branch: body.deployment.ref,
         status: body.deployment_status.state,
-        flynnAppUrl,
+        deploymentUrl,
         deployedAppUrl
       }
       debug('Github event received %o', event)

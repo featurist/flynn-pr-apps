@@ -1,0 +1,41 @@
+body {
+  margin-top: 0;
+  font-family: sans-serif;
+}
+
+.deployInfo {
+  padding-top: 10px;
+  padding-bottom: 10px;
+  align-items: center;
+  display: flex;
+  position: sticky;
+  top: 0;
+  border-bottom: 1px solid lightgrey;
+  background-color: white;
+}
+
+.deployInfo div:not(:first-child) {
+  padding-left: 20px;
+  padding-right: 20px;
+  border-left: 1px solid grey;
+}
+
+.deployInfo .status {
+  margin-left: 10px;
+  margin-right: 20px;
+  padding: 5px 10px 4px 10px;
+  text-transform: uppercase;
+  color: white;
+  border-radius: 5px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+.status.success {
+  background-color: mediumseagreen;
+}
+.status.failure {
+  background-color: orangered;
+}
+.status.pending {
+  background-color: orange;
+}

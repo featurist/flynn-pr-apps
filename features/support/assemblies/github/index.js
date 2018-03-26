@@ -8,7 +8,11 @@ const GitAdapter = require('../../../../lib/gitAdapter')
 const FlynnApiClient = require('../../../../lib/flynnApiClient')
 const ConfigLoader = require('../../../../lib/configLoader')
 const createPrAppsApp = require('../../../..')
+const DeploymentRepo = require('../../../../lib/deploymentRepo')
+const db = require('../../../../db/models')
+const resetDb = require('../../resetDb')
 const createPrNotifierApp = require('./prNotifierApp')
+const startTestApp = require('../../startTestApp')
 const GithubApi = require('./githubApi')
 const GithubService = require('./githubService')
 const GitRepo = require('./gitRepo')
@@ -45,6 +49,8 @@ module.exports = class GithubAssembly {
       clusterDomain: this.clusterDomain
     })
 
+    const deploymentRepo = new DeploymentRepo(db)
+
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
@@ -57,21 +63,33 @@ module.exports = class GithubAssembly {
       appInfo: {
         domain: `pr-apps.${this.clusterDomain}`
       },
+      deploymentRepo,
       configLoader: new ConfigLoader()
     })
+
     const ghApi = new GithubApi({
       repo: process.env.TEST_GH_REPO,
       token: process.env.TEST_GH_USER_TOKEN
     })
+
+    this.serverWithSubdomains = startTestApp({
+      prAppsApp: createPrAppsApp({
+        webhookSecret: 'bananas',
+        prApps
+      }),
+      fakeFlynnApi: this.fakeFlynnApi,
+      port: fakeFlynnApiPort
+    })
+
     this.webhookSecret = 'webhook secret'
-    this.prAppsApp = createPrAppsApp({
+    const prAppsApp = createPrAppsApp({
       webhookSecret: this.webhookSecret,
       prApps
     })
     this.prNotifierApp = createPrNotifierApp({ghApi})
-    this.prAppsApp.use(this.prNotifierApp)
+    prAppsApp.use(this.prNotifierApp)
 
-    this.prAppsServer = this.prAppsApp.listen(this.port)
+    this.ghAccessiblePrAppsServer = prAppsApp.listen(this.port)
 
     this.userLocalRepo = new GitRepo({
       remoteUrl: process.env.TEST_GH_REPO,
@@ -85,9 +103,9 @@ module.exports = class GithubAssembly {
     })
 
     await Promise.all([
+      resetDb(db),
       this.codeHostingService.deleteWebhooks(),
       this.codeHostingService.closeAllPrs(),
-      this.fakeFlynnApi.start(),
       this.userLocalRepo.create()
     ])
     await this.codeHostingService.deleteNonMasterBranches()
@@ -96,8 +114,8 @@ module.exports = class GithubAssembly {
   async stop () {
     this.codeHostingServiceApi.disable()
     await Promise.all([
-      this.prAppsServer
-        ? new Promise(resolve => this.prAppsServer.close(resolve))
+      this.ghAccessiblePrAppsServer
+        ? new Promise(resolve => this.ghAccessiblePrAppsServer.close(resolve))
         : Promise.resolve(),
       this.prNotifierServer
         ? new Promise(resolve => this.prNotifierServer.close(resolve))
@@ -137,11 +155,12 @@ class GithubActor extends ApiActorBase {
     this.codeHostingService = codeHostingService
   }
 
-  async openPullRequest () {
-    const {prNotifier, prNumber} = await this.codeHostingService.openPullRequest(this.currentBranch)
+  async openPullRequest ({branch = this.currentBranch} = {}) {
+    const {prNotifier, prNumber} = await this.codeHostingService.openPullRequest(branch)
     this.prNotifier = prNotifier
     this.prNumber = prNumber
     this.version = this.prNotifier.version
+    return prNumber
   }
 
   async reopenPullRequest () {
@@ -155,8 +174,8 @@ class GithubActor extends ApiActorBase {
     this.version = await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
   }
 
-  async mergePullRequest () {
-    await this.codeHostingService.mergePullRequest(this.prNumber)
+  async mergePullRequest (prNumber = this.prNumber) {
+    await this.codeHostingService.mergePullRequest(prNumber)
   }
 
   async closePullRequest () {

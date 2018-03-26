@@ -59,7 +59,7 @@ module.exports = class GithubService {
   async openPullRequest (branch) {
     debug('Opening pull request for branch %s', branch)
     const pr = await this.ghApi.createPullRequest({
-      title: 'Adds Feature1',
+      title: `Adds ${branch}`,
       head: branch,
       base: 'master'
     })

@@ -5,7 +5,9 @@ const GitAdapter = require('../../../../lib/gitAdapter')
 const FlynnApiClient = require('../../../../lib/flynnApiClient')
 const ShellAdapter = require('../../../../lib/shellAdapter')
 const ConfigLoader = require('../../../../lib/configLoader')
+const DeploymentRepo = require('../../../../lib/deploymentRepo')
 const createPrAppsApp = require('../../../..')
+const startTestApp = require('../../startTestApp')
 const GitRepo = require('../github/gitRepo')
 const FakeFlynnApi = require('../github/fakeFlynnApi')
 const CodeHostingServiceApiMemory = require('../memory/codeHostingServiceApiMemory')
@@ -13,14 +15,16 @@ const getRandomPort = require('../github/getRandomPort')
 const PrNotifier = require('../memory/prNotifier')
 const ApiActorBase = require('./apiActorBase')
 const PrAppsWebClient = require('./prAppsWebClient')
+const db = require('../../../../db/models')
+const resetDb = require('../../resetDb')
 
 module.exports = class LocalAssembly {
   setup () {}
 
   async start () {
-    [this.prAppsPort, this.fakeFlynnApiPort] = await Promise.all([
+    const [port] = await Promise.all([
       getRandomPort(),
-      getRandomPort()
+      resetDb(db)
     ])
 
     this.fs = new FsAdapter()
@@ -35,15 +39,16 @@ module.exports = class LocalAssembly {
       git
     })
 
-    this.clusterDomain = `prs.localtest.me:${this.fakeFlynnApiPort}`
+    this.clusterDomain = `prs.localtest.me:${port}`
 
     this.fakeFlynnApi = new FakeFlynnApi({
       authKey: 'flynnApiAuthKey',
-      port: this.fakeFlynnApiPort,
       clusterDomain: this.clusterDomain
     })
 
     this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
+
+    const deploymentRepo = new DeploymentRepo(db)
 
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
@@ -57,23 +62,28 @@ module.exports = class LocalAssembly {
       appInfo: {
         domain: `pr-apps.${this.clusterDomain}`
       },
+      deploymentRepo,
       configLoader: new ConfigLoader()
     })
 
     this.webhookSecret = 'webhook secret'
-    this.prAppsApp = createPrAppsApp({
+    const prAppsApp = createPrAppsApp({
       webhookSecret: this.webhookSecret,
       prApps
     })
 
     this.userLocalRepo = new GitRepo({remoteUrl})
 
-    this.prAppsServer = this.prAppsApp.listen(this.prAppsPort)
-    this.prAppsClient = new PrAppsWebClient(`http://localhost:${this.prAppsPort}`, this.webhookSecret)
+    this.appServer = startTestApp({
+      prAppsApp,
+      fakeFlynnApi: this.fakeFlynnApi,
+      port
+    })
+
+    this.prAppsClient = new PrAppsWebClient(`https://pr-apps.prs.localtest.me:${port}`, this.webhookSecret)
 
     await Promise.all([
       remoteRepoSh('git init --bare'),
-      this.fakeFlynnApi.start(),
       this.userLocalRepo.create()
     ])
   }
@@ -114,27 +124,27 @@ class LocalActor extends ApiActorBase {
     this.prAppsClient = prAppsClient
     this.codeHostingServiceApi = codeHostingServiceApi
     this.prNumber = 23
-
-    this.prNotifier = new PrNotifier({
-      prEventsListener: codeHostingServiceApi,
-      branch: this.currentBranch,
-      prNumber: this.prNumber,
-      fakeFlynnApi: this.fakeFlynnApi
-    })
   }
 
-  async openPullRequest () {
+  async openPullRequest ({prNumber = this.prNumber, branch = this.currentBranch} = {}) {
     const body = {
       action: 'opened',
-      number: this.prNumber,
+      number: prNumber,
       pull_request: {
         head: {
-          ref: this.currentBranch,
+          ref: branch,
           sha: 1
         }
       }
     }
     await this.prAppsClient.post('/webhook', body)
+
+    this.prNotifier = new PrNotifier({
+      prEventsListener: this.codeHostingServiceApi,
+      branch,
+      prNumber: prNumber,
+      fakeFlynnApi: this.fakeFlynnApi
+    })
   }
 
   async reopenPullRequest () {
@@ -149,6 +159,13 @@ class LocalActor extends ApiActorBase {
       }
     }
     await this.prAppsClient.post('/webhook', body)
+
+    this.prNotifier = new PrNotifier({
+      prEventsListener: this.codeHostingServiceApi,
+      branch: this.currentBranch,
+      prNumber: this.prNumber,
+      fakeFlynnApi: this.fakeFlynnApi
+    })
   }
 
   async mergePullRequest () {

@@ -22,6 +22,7 @@ The deployed app's github commit sha is stored in a `VERSION` environment variab
 git clone https://github.com/featurist/flynn-pr-apps
 cd flynn-pr-apps
 flynn create pr-apps
+flynn resource add postgres
 flynn env set GH_REPO=https://github.com/some-org/some-repo.git
 flynn env set GH_USER_TOKEN=YOUR_TOKEN
 flynn env set WEBHOOK_SECRET=$(openssl rand -hex 20)
@@ -57,7 +58,15 @@ Route key (`api-web` in the example above) refers to a service name in your `Pro
 
 ## Development
 
-It doesn't make much sense to run Pr Apps locally (even though you could with `yarn start`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](#create-pr-apps-flynn-app) above).
+It doesn't make much sense to run Pr Apps locally (even though you could with `yarn dev`) because of the hard dependency of flynn api. I personally rely on tests and occasionally push the changes to flynn app in the real flynn cluster (see [Create Pr-Apps flynn app](#create-pr-apps-flynn-app) above).
+
+The only exception to the above is working on "deployment logs" page. To get there you need a test deployment. Generate one with:
+
+```
+yarn sequelize db:seed:all
+```
+
+Then `yarn dev` and then open http://localhost:5599/deployments/a4d8ffe3-7a6d-47a9-aa69-6d62cc436e0e
 
 ## Testing
 
@@ -78,7 +87,13 @@ To run memory assembly:
 ./test-memory
 ```
 
-For local assembly (memory + real fs, git, pr apps service, fake flynn service, fake github remote):
+For local assembly (memory + real fs, postgres, git, pr apps service, fake flynn service, fake github remote) you need a local postgres server and a test db that is created with this command:
+
+```
+NODE_ENV=test yarn sequelize db:create
+```
+
+Then:
 
 ```
 ./test-local

@@ -119,6 +119,16 @@ Then('{actor} sees that the deploy failed', async function (actor) {
   await actor.shouldNotSeeApp()
 })
 
+Then('{actor} sees that the deploy failed instantly', async function (actor) {
+  await actor.shouldSeeDeployFailed({instantly: true})
+  await actor.shouldNotSeeApp()
+})
+
+Then('{actor} can see the validation error', async function (actor) {
+  const lastDeployment = await actor.followLastDeploymentUrl()
+  actor.shouldSeeValidationError(lastDeployment)
+})
+
 Given('{actor}\'s app needs environment variables {envVar} and {envVar}', function (actor, envVar1, envVar2) {
   this.envVars = [envVar1, envVar2]
 })
@@ -135,7 +145,6 @@ When('{actor} opens a new pull request', async function (actor) {
   await this.assembly.enablePrEvents()
   await actor.pushBranch()
   await actor.openPullRequest()
-  await actor.shouldSeeDeployStarted()
 })
 
 Then('{actor}\'s pr app has those environment variables set', async function (actor) {
@@ -297,4 +306,49 @@ Then('{actor}\'s app environment should change to {envVar}, {envVar} and keep {e
     result[key] = value
     return result
   }, {}))
+})
+
+When('{actor} follows a deployment link from the last deploy', async function (actor) {
+  this.lastDeployment = await actor.followLastDeploymentUrl()
+})
+
+Then('{actor} sees the logs of that deploy', function (actor) {
+  actor.shouldSeeDeployLogs(this.lastDeployment)
+  actor.shouldSeeDeployStatus(this.lastDeployment)
+  actor.shouldSeeLinkToFlynnApp(this.lastDeployment)
+  actor.shouldSeeLinkToDeployedApp(this.lastDeployment)
+})
+
+Given('{actor} opened two pull requests', async function (actor) {
+  await this.assembly.enablePrEvents()
+
+  await actor.pushBranch()
+  this.pr1Number = await actor.openPullRequest()
+  await actor.shouldSeeDeploySuccessful()
+
+  this.deployLogUrl1 = actor.getLastDeploymentUrl()
+  actor.shouldSeeDeployLogs(
+    await actor.followLastDeploymentUrl(this.deployLogUrl1)
+  )
+
+  await actor.pushBranch('Feature2')
+  await actor.openPullRequest({prNumber: 24, branch: 'Feature2'})
+  await actor.shouldSeeDeploySuccessful()
+
+  this.deployLogUrl2 = actor.getLastDeploymentUrl()
+  actor.shouldSeeDeployLogs(
+    await actor.followLastDeploymentUrl(this.deployLogUrl2)
+  )
+})
+
+When('{actor} closes one of them', async function (actor) {
+  await actor.mergePullRequest(this.pr1Number)
+  await actor.shouldNotSeeApp(`pr-${this.pr1Number}`)
+})
+
+Then('{actor} can only see deploy logs of the other one', async function (actor) {
+  await actor.shouldNotSeeDeployLogs(this.deployLogUrl1)
+  actor.shouldSeeDeployLogs(
+    await actor.followLastDeploymentUrl(this.deployLogUrl2)
+  )
 })

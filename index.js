@@ -1,4 +1,5 @@
 const express = require('express')
+const path = require('path')
 const crypto = require('crypto')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
@@ -7,9 +8,12 @@ const GithubApiAdapter = require('./lib/githubApiAdapter')
 const PrApps = require('./lib/prApps')
 const GitProject = require('./lib/gitProject')
 const FlynnApiClient = require('./lib/flynnApiClient')
+const DeploymentRepo = require('./lib/deploymentRepo')
+const db = require('./db/models')
 const FsAdapter = require('./lib/fsAdapter')
 const GitAdapter = require('./lib/gitAdapter')
 const ConfigLoader = require('./lib/configLoader')
+const {renderDeployment} = require('./lib/views')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -99,6 +103,21 @@ module.exports = function ({prApps, webhookSecret}) {
       }
     }))
 
+  app.get('/deployments/:deploymentId', handleErrors(async (req, res) => {
+    res.type('html')
+
+    const deployment = await prApps.getDeployment(req.params.deploymentId)
+    if (deployment) {
+      res.send(renderDeployment(deployment))
+    } else {
+      res.status(404).end()
+    }
+  }))
+
+  app.get('/style.css', (req, res) => {
+    res.sendFile(path.resolve(__dirname, 'browser', 'style.css'))
+  })
+
   return app
 }
 
@@ -123,14 +142,17 @@ if (!module.parent) {
     })
   }
 
+  const deploymentRepo = new DeploymentRepo(db)
+
   const prApps = new PrApps({
     codeHostingServiceApi,
     scmProject,
     flynnApiClientFactory,
-    appInfo: require('./appInfo.json'),
+    deploymentRepo,
+    appInfo: require('./appInfo.json')[0],
     configLoader: new ConfigLoader()
   })
-  const port = process.env.PORT
+  const port = process.env.PORT || 5599
   module.exports({prApps, webhookSecret: process.env.WEBHOOK_SECRET}).listen(port, function () {
     console.info('pr-apps is listening on %s', port)
   })

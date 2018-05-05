@@ -232,6 +232,7 @@ module.exports = {
       status: 'success',
       deployedAppUrl: 'http://example.com/app',
       appName: 'pr-3456',
+      version: 'sdfl342342l',
       flynnAppUrl: 'http://dashboard.prs.example.com/apps/234',
       createdAt: new Date(),
       updatedAt: new Date()

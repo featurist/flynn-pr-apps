@@ -1,11 +1,11 @@
-Feature: View deployment logs
+Feature: View deployment
 
-  Scenario: view logs of a deployed pr app
+  Scenario: view deployment page of a deployed pr app
     Given Frank opened a pull request
     When Frank follows a deployment link from the last deploy
-    Then Frank sees the logs of that deploy
+    Then Frank sees details of that deployment
 
-  Scenario: can not view logs of destroyed app
+  Scenario: can not view deployment of destroyed app
     Given Frank opened two pull requests
     When Frank closes one of them
     Then Frank can only see deploy logs of the other one

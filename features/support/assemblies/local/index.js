@@ -126,14 +126,14 @@ class LocalActor extends ApiActorBase {
     this.prNumber = 23
   }
 
-  async openPullRequest ({prNumber = this.prNumber, branch = this.currentBranch} = {}) {
+  async openPullRequest ({version, prNumber = this.prNumber, branch = this.currentBranch} = {}) {
     const body = {
       action: 'opened',
       number: prNumber,
       pull_request: {
         head: {
           ref: branch,
-          sha: 1
+          sha: version
         }
       }
     }
@@ -142,7 +142,7 @@ class LocalActor extends ApiActorBase {
     this.prNotifier = new PrNotifier({
       prEventsListener: this.codeHostingServiceApi,
       branch,
-      prNumber: prNumber,
+      prNumber,
       fakeFlynnApi: this.fakeFlynnApi
     })
   }

@@ -87,7 +87,9 @@ class MemoryActor extends BaseActor {
   async start () {}
   async stop () {}
 
-  async pushBranch () {}
+  async pushBranch () {
+    return 'sdfl342342l'
+  }
 
   withExistingPrApp (config) {
     this.flynnApiClient.withExistingApp(`pr-${this.prNumber}`, config)
@@ -95,8 +97,8 @@ class MemoryActor extends BaseActor {
 
   withClosedPullRequest () {}
 
-  async openPullRequest ({prNumber = this.prNumber, branch = this.currentBranch} = {}) {
-    this.currentPrNotifier = await this.prAppsClient.openPullRequest(branch, prNumber, 1)
+  async openPullRequest ({version, prNumber = this.prNumber, branch = this.currentBranch} = {}) {
+    this.currentPrNotifier = await this.prAppsClient.openPullRequest(branch, prNumber, version)
   }
 
   async reopenPullRequest () {
@@ -158,6 +160,10 @@ class MemoryActor extends BaseActor {
 
   shouldSeeDeployStatus ({status}) {
     expect(status).to.eq('success')
+  }
+
+  shouldSeeDeployedAppVersion ({version}, expectedVersion) {
+    expect(version).to.eq(expectedVersion)
   }
 
   shouldSeeLinkToFlynnApp ({flynnAppUrl}) {

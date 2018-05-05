@@ -243,8 +243,8 @@ resources:
 
 Given('{actor} opened a pull request', async function (actor) {
   await this.assembly.enablePrEvents()
-  await actor.pushBranch()
-  await actor.openPullRequest()
+  this.scmVersion = await actor.pushBranch()
+  await actor.openPullRequest({version: this.scmVersion})
   await actor.shouldSeeDeploySuccessful()
 })
 
@@ -312,9 +312,10 @@ When('{actor} follows a deployment link from the last deploy', async function (a
   this.lastDeployment = await actor.followLastDeploymentUrl()
 })
 
-Then('{actor} sees the logs of that deploy', function (actor) {
+Then('{actor} sees details of that deployment', function (actor) {
   actor.shouldSeeDeployLogs(this.lastDeployment)
   actor.shouldSeeDeployStatus(this.lastDeployment)
+  actor.shouldSeeDeployedAppVersion(this.lastDeployment, this.scmVersion)
   actor.shouldSeeLinkToFlynnApp(this.lastDeployment)
   actor.shouldSeeLinkToDeployedApp(this.lastDeployment)
 })

@@ -35,7 +35,7 @@ module.exports = class ApiActorBase extends BaseActor {
   }
 
   async pushBranch (branch = this.currentBranch) {
-    await this.userLocalRepo.pushBranch(branch, '<h1>Hello World!</h1>')
+    return this.userLocalRepo.pushBranch(branch, '<h1>Hello World!</h1>')
   }
 
   async createPrApp (config = {}) {
@@ -167,6 +167,10 @@ module.exports = class ApiActorBase extends BaseActor {
 
   shouldSeeDeployStatus (logPage) {
     expect(logPage('.status').text()).to.eq('success')
+  }
+
+  shouldSeeDeployedAppVersion (logPage, version) {
+    expect(logPage('.version').text()).to.eq(version)
   }
 
   shouldSeeLinkToFlynnApp (logPage) {

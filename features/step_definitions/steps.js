@@ -248,39 +248,19 @@ Given('{actor} opened a pull request', async function (actor) {
   await actor.shouldSeeDeploySuccessful()
 })
 
-When('{actor} checks pr app\'s version', function (actor) {
-  this.appVersion = actor.getAppVersion()
-})
-
-Then('{actor} can see that version', function (actor) {
-  actor.shouldSeeAppVersion(this.appVersion)
-})
-
 Given('{actor} updated his pull request', async function (actor) {
-  await actor.withExistingPrApp({env: {VERSION: 5}})
+  await actor.withExistingPrApp()
   await this.assembly.enablePrEvents()
   await actor.pushMoreChanges()
   await actor.shouldSeeDeploySuccessful()
 })
 
-Then('{actor} can see updated version', function (actor) {
-  actor.shouldSeeUpdatedVersion({
-    oldVersion: 5,
-    newVersion: this.appVersion
-  })
-})
-
 Given('{actor} has pushed a broken change', async function (actor) {
-  await actor.withExistingPrApp({env: {VERSION: 5}})
+  await actor.withExistingPrApp()
   this.assembly.fakeFlynnApi.failNextDeploy()
   await this.assembly.enablePrEvents()
   await actor.pushMoreChanges()
   await actor.shouldSeeDeployFailed()
-})
-
-Then('{actor} still sees the old version', function (actor) {
-  const currentVersion = actor.getAppVersion()
-  actor.shouldSeeAppVersion(currentVersion, 5)
 })
 
 Given('{actor} has a pr app with an environment variable {envVar} and {envVar}', async function (actor, envVar, envVar2) {

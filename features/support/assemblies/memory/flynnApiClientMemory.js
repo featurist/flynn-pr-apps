@@ -20,8 +20,6 @@ module.exports = class FlynnApiClientMemory {
     }, {})
     Object.assign(app.release.env, resourcesEnv, env)
 
-    app.appVersion = app.release.env.VERSION
-
     resources.forEach(resource => {
       const provider = {
         id: idSeq++,
@@ -86,11 +84,6 @@ module.exports = class FlynnApiClientMemory {
     app.deploys.push({
       release: clone(app.release)
     })
-
-    // slugbuilder release does not have env
-    if (app.release.env) {
-      app.appVersion = app.release.env.VERSION
-    }
   }
 
   async scaleAppProcesses ({appId, releaseId, scaleRequest}) {

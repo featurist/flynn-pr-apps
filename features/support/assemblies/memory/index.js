@@ -1,6 +1,5 @@
 const yaml = require('js-yaml')
 const {expect} = require('chai')
-const omit = require('lowscore/omit')
 const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
 const FlynnApiClientMemory = require('./flynnApiClientMemory')
@@ -102,12 +101,11 @@ class MemoryActor extends BaseActor {
   }
 
   async reopenPullRequest () {
-    this.currentPrNotifier = await this.prAppsClient.reopenPullRequest(this.currentBranch, this.prNumber, 1)
+    this.currentPrNotifier = await this.prAppsClient.reopenPullRequest(this.currentBranch, this.prNumber)
   }
 
   async pushMoreChanges () {
-    const currentVersion = this.getAppVersion()
-    this.currentPrNotifier = await this.prAppsClient.pushMoreChanges(this.currentBranch, this.prNumber, currentVersion + 1)
+    this.currentPrNotifier = await this.prAppsClient.pushMoreChanges(this.currentBranch, this.prNumber)
   }
 
   async closePullRequest () {
@@ -191,7 +189,7 @@ class MemoryActor extends BaseActor {
   }
 
   assertEnvironmentSet (env) {
-    expect(omit(this.fakeFlynnApi.firstApp().release.env, 'VERSION')).to.eql(env)
+    expect(this.fakeFlynnApi.firstApp().release.env).to.eql(env)
   }
 
   assertServiceIsUp ({service, domain}) {

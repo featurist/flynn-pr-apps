@@ -195,16 +195,14 @@ class LocalActor extends ApiActorBase {
   }
 
   async pushMoreChanges () {
-    await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
-    const currentVersion = this.getAppVersion()
-    console.log('currentVersion', currentVersion)
+    const version = await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
     const body = {
       action: 'synchronize',
       number: this.prNumber,
       pull_request: {
         head: {
           ref: this.currentBranch,
-          sha: currentVersion + 1
+          sha: version
         }
       }
     }

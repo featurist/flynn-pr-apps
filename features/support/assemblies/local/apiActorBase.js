@@ -43,8 +43,7 @@ module.exports = class ApiActorBase extends BaseActor {
     if (config.resources) {
       this.fakeFlynnApi.addResources(app, config.resources)
     }
-    const env = Object.assign({VERSION: 1}, config.env)
-    this.fakeFlynnApi.addEnv(app, env)
+    this.fakeFlynnApi.addEnv(app, config.env)
     await this.userLocalRepo.pushCurrentBranchToFlynn(gitUrl)
   }
 
@@ -96,7 +95,6 @@ module.exports = class ApiActorBase extends BaseActor {
   async assertEnvironmentSet (config) {
     await retry(() => {
       const lastDeploy = clone(this.fakeFlynnApi.firstApp().lastDeploy())
-      delete lastDeploy.release.env.VERSION
       delete lastDeploy.release.processes
 
       expect(lastDeploy).to.eql({

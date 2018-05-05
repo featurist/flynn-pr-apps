@@ -159,7 +159,6 @@ class GithubActor extends ApiActorBase {
     const {prNotifier, prNumber} = await this.codeHostingService.openPullRequest(branch)
     this.prNotifier = prNotifier
     this.prNumber = prNumber
-    this.version = this.prNotifier.version
     return prNumber
   }
 
@@ -167,7 +166,6 @@ class GithubActor extends ApiActorBase {
     const {prNotifier, prNumber} = await this.codeHostingService.reopenPullRequest(this.prNumber)
     this.prNotifier = prNotifier
     this.prNumber = prNumber
-    this.version = this.prNotifier.version
   }
 
   async pushMoreChanges () {

@@ -126,10 +126,6 @@ module.exports = class FakeFlynnApi {
         release: app.release
       }
       app.deploys.push(clone(deploy))
-      // slugbuilder bump deploy does not set version
-      if (app.release.env) {
-        app.appVersion = app.release.env.VERSION
-      }
       res.status(201).end()
     })
 
@@ -249,7 +245,6 @@ module.exports = class FakeFlynnApi {
     debug('Setting initial env %o', env)
     app.release.id = 1
     Object.assign(app.release.env, env)
-    app.appVersion = app.release.env.VERSION
   }
 
   firstApp () {

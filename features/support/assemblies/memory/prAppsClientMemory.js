@@ -10,10 +10,10 @@ module.exports = class PrAppsClientMemory {
     this.enabled = true
   }
 
-  async openPullRequest (branch, prNumber, version) {
+  async openPullRequest (branch, prNumber) {
     if (this.enabled) {
       try {
-        await this.prApps.deployPullRequest({branch, prNumber, version})
+        await this.prApps.deployPullRequest({branch, prNumber})
       } catch (e) {
         console.error(e)
       }

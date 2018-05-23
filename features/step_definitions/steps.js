@@ -244,7 +244,7 @@ resources:
 Given('{actor} opened a pull request', async function (actor) {
   await this.assembly.enablePrEvents()
   this.scmVersion = await actor.pushBranch()
-  await actor.openPullRequest({version: this.scmVersion})
+  await actor.openPullRequest()
   await actor.shouldSeeDeploySuccessful()
 })
 

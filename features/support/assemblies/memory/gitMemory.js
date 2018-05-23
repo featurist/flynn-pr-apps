@@ -1,10 +1,13 @@
 module.exports = class GitMemory {
   constructor (fakeFlynnApi) {
     this.fakeFlynnApi = fakeFlynnApi
+    this.remoteVersion = 1
   }
 
-  makeShallowPushableClone () {
+  makePushableClone () {
+    const remoteVersion = this.remoteVersion++
     return {
+      remoteVersion,
       push: (url, logCollector) => {
         if (this.fakeFlynnApi.nextDeployShouldFail) {
           delete this.fakeFlynnApi.nextDeployShouldFail

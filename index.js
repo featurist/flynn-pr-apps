@@ -77,8 +77,7 @@ module.exports = function ({prApps, webhookSecret}) {
         number,
         pull_request: {
           head: {
-            ref: branch,
-            sha: version
+            ref: branch
           }
         }
       } = req.body
@@ -88,11 +87,11 @@ module.exports = function ({prApps, webhookSecret}) {
       if (action === 'opened' || action === 'reopened') {
         debug('Initiating new deploy')
         res.status(200).send('Initiating new deploy')
-        await prApps.deployPullRequest({branch, prNumber: number, version})
+        await prApps.deployPullRequest({branch, prNumber: number})
       } else if (action === 'synchronize') {
         debug('Initiating deploy update')
         res.status(200).send('Initiating deploy update')
-        await prApps.deployUpdate({branch, prNumber: number, version})
+        await prApps.deployUpdate({branch, prNumber: number})
       } else if (action === 'closed') {
         debug('Initiating app destroy')
         res.status(200).send('Initiating app destroy')

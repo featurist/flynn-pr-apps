@@ -126,14 +126,13 @@ class LocalActor extends ApiActorBase {
     this.prNumber = 23
   }
 
-  async openPullRequest ({version, prNumber = this.prNumber, branch = this.currentBranch} = {}) {
+  async openPullRequest ({prNumber = this.prNumber, branch = this.currentBranch} = {}) {
     const body = {
       action: 'opened',
       number: prNumber,
       pull_request: {
         head: {
-          ref: branch,
-          sha: version
+          ref: branch
         }
       }
     }
@@ -201,11 +200,11 @@ class LocalActor extends ApiActorBase {
       number: this.prNumber,
       pull_request: {
         head: {
-          ref: this.currentBranch,
-          sha: version
+          ref: this.currentBranch
         }
       }
     }
     await this.prAppsClient.post('/webhook', body)
+    return version
   }
 }

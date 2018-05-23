@@ -87,7 +87,7 @@ class MemoryActor extends BaseActor {
   async stop () {}
 
   async pushBranch () {
-    return 'sdfl342342l'
+    return 1
   }
 
   withExistingPrApp (config) {
@@ -96,8 +96,8 @@ class MemoryActor extends BaseActor {
 
   withClosedPullRequest () {}
 
-  async openPullRequest ({version, prNumber = this.prNumber, branch = this.currentBranch} = {}) {
-    this.currentPrNotifier = await this.prAppsClient.openPullRequest(branch, prNumber, version)
+  async openPullRequest ({prNumber = this.prNumber, branch = this.currentBranch} = {}) {
+    this.currentPrNotifier = await this.prAppsClient.openPullRequest(branch, prNumber)
   }
 
   async reopenPullRequest () {

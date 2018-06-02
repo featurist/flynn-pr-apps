@@ -1,3 +1,6 @@
+if (process.env.NEWRELIC_KEY) {
+  require('newrelic')
+}
 const express = require('express')
 const path = require('path')
 const crypto = require('crypto')

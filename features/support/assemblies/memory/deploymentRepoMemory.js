@@ -23,9 +23,9 @@ module.exports = class DeploymentRepoMemory {
     this.store[deployment.id] = deployment
   }
 
-  deleteAppDeployments (appName) {
+  deleteAppDeployments (prNumber) {
     Object.entries(this.store).forEach(([id, d]) => {
-      if (d.appName === appName) {
+      if (d.prNumber === prNumber) {
         delete this.store[id]
       }
     })

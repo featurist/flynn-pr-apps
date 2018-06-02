@@ -47,6 +47,10 @@ module.exports = class ApiActorBase extends BaseActor {
     await this.userLocalRepo.pushCurrentBranchToFlynn(gitUrl)
   }
 
+  async redeploy (logPage) {
+    await logPage.clickButton('⟳ redeploy')
+  }
+
   async shouldSeeDeployStarted () {
     await this.prNotifier.waitForDeployStarted()
   }
@@ -147,37 +151,53 @@ module.exports = class ApiActorBase extends BaseActor {
     return browser.visit(deploymentUrl)
   }
 
+  lookUpDeploymentId (logPage) {
+    const url = logPage.browser.location.href
+    const [lastDeployId] = url.match(/[^/]+$/)
+    return lastDeployId
+  }
+
+  shouldSeeNewDeploymentDetails ({logPage, prevDeploymentId}) {
+    const deploymentId = this.lookUpDeploymentId(logPage)
+    expect(deploymentId).to.match(/^[^\s]{36}$/)
+    expect(deploymentId).to.not.eq(prevDeploymentId)
+  }
+
   async shouldNotSeeDeployLogs (deploymentUrl) {
     const browser = new HeadlessBrowser()
-    const {statusCode} = await browser.visit(deploymentUrl, {exceptions: false, response: true})
-    expect(statusCode).to.eq(404)
+    let fail = false
+    try {
+      await browser.visit(deploymentUrl)
+      fail = true
+    } catch (e) {}
+    expect(fail).to.eq(false)
   }
 
   shouldSeeDeployLogs (logPage) {
-    const logs = logPage('.logChunk').text()
-    expect(logs).to.match(/\[new branch\] {6}HEAD -> master/)
+    const logs = logPage.text('.logChunk')
+    expect(logs).to.match(/\[new branch\] HEAD -> master/)
   }
 
   shouldSeeValidationError (logPage) {
-    const logs = logPage('.logChunk').text()
+    const logs = logPage.text('.logChunk')
     expect(logs).to.match(/TypeError: Expected a value/)
   }
 
   shouldSeeDeployStatus (logPage) {
-    expect(logPage('.status').text()).to.eq('success')
+    expect(logPage.text('.status')).to.eq('success')
   }
 
   shouldSeeDeployedAppVersion (logPage, version) {
-    expect(logPage('.version').text()).to.eq(version)
+    expect(logPage.text('.version')).to.eq(version)
   }
 
   shouldSeeLinkToFlynnApp (logPage) {
-    expect(logPage('.flynnAppUrl').attr('href'))
+    expect(logPage.attribute('.flynnAppUrl', 'href'))
       .to.eq(`https://dashboard.${this.fakeFlynnApi.clusterDomain}/apps/${this.fakeFlynnApi.firstApp().id}`)
   }
 
   shouldSeeLinkToDeployedApp (logPage) {
-    expect(logPage('.deployedAppUrl').attr('href'))
+    expect(logPage.attribute('.deployedAppUrl', 'href'))
       .to.eq(`https://pr-${this.prNumber}.${this.fakeFlynnApi.clusterDomain}`)
   }
 }

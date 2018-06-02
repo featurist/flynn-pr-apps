@@ -1,4 +1,4 @@
-export DEBUG=${DEBUG:-pr-apps*}
+export DEBUG=${DEBUG:-pr-apps*,zombie}
 export NODE_ENV=test
 
 function cucumber_normal {

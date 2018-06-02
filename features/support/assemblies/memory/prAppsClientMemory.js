@@ -10,6 +10,16 @@ module.exports = class PrAppsClientMemory {
     this.enabled = true
   }
 
+  async redeploy ({branch, prNumber}) {
+    await this.prApps.deployUpdate({branch, prNumber})
+    return new PrNotifier({
+      prEventsListener: this.prApps.codeHostingServiceApi,
+      prNumber,
+      fakeFlynnApi: this.fakeFlynnApi,
+      branch
+    })
+  }
+
   async openPullRequest (branch, prNumber) {
     if (this.enabled) {
       try {

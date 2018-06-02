@@ -14,6 +14,7 @@ const FsAdapter = require('./lib/fsAdapter')
 const GitAdapter = require('./lib/gitAdapter')
 const ConfigLoader = require('./lib/configLoader')
 const {renderDeployment} = require('./lib/views')
+const WorkQueue = require('./lib/workQueue')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -113,6 +114,12 @@ module.exports = function ({prApps, webhookSecret}) {
     }
   }))
 
+  app.post('/deployments/:deploymentId/redeploy', handleErrors(async (req, res) => {
+    const deployment = await prApps.getDeployment(req.params.deploymentId)
+    const newDeployment = await prApps.deployUpdate(deployment)
+    res.redirect(`/deployments/${newDeployment.id}`)
+  }))
+
   app.get('/style.css', (req, res) => {
     res.sendFile(path.resolve(__dirname, 'browser', 'style.css'))
   })
@@ -148,6 +155,7 @@ if (!module.parent) {
     scmProject,
     flynnApiClientFactory,
     deploymentRepo,
+    workQueue: new WorkQueue(),
     appInfo: require('./appInfo.json')[0],
     configLoader: new ConfigLoader()
   })

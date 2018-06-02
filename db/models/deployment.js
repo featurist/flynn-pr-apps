@@ -8,6 +8,8 @@ module.exports = (sequelize, DataTypes) => {
     status: DataTypes.STRING,
     version: DataTypes.STRING,
     appName: DataTypes.STRING,
+    prNumber: DataTypes.INTEGER,
+    branch: DataTypes.STRING,
     deployedAppUrl: DataTypes.STRING,
     flynnAppUrl: DataTypes.STRING
   }, {})

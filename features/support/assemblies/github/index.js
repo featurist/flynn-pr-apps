@@ -9,6 +9,7 @@ const FlynnApiClient = require('../../../../lib/flynnApiClient')
 const ConfigLoader = require('../../../../lib/configLoader')
 const createPrAppsApp = require('../../../..')
 const DeploymentRepo = require('../../../../lib/deploymentRepo')
+const WorkQueue = require('../../../../lib/workQueue')
 const db = require('../../../../db/models')
 const resetDb = require('../../resetDb')
 const createPrNotifierApp = require('./prNotifierApp')
@@ -54,6 +55,7 @@ module.exports = class GithubAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
+      workQueue: new WorkQueue(),
       flynnApiClientFactory: (clusterDomain) => {
         return new FlynnApiClient({
           clusterDomain,

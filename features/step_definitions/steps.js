@@ -263,6 +263,14 @@ Given('{actor} has pushed a broken change', async function (actor) {
   await actor.shouldSeeDeployFailed()
 })
 
+Given('the deployment of {actor}\'s pr apps has failed', async function (actor) {
+  await actor.withExistingPrApp()
+  this.assembly.fakeFlynnApi.failNextDeploy()
+  await this.assembly.enablePrEvents()
+  await actor.pushMoreChanges()
+  await actor.shouldSeeDeployFailed()
+})
+
 Given('{actor} has a pr app with an environment variable {envVar} and {envVar}', async function (actor, envVar, envVar2) {
   const env = [envVar, envVar2].reduce((result, [key, value]) => {
     result[key] = value
@@ -332,4 +340,17 @@ Then('{actor} can only see deploy logs of the other one', async function (actor)
   actor.shouldSeeDeployLogs(
     await actor.followLastDeploymentUrl(this.deployLogUrl2)
   )
+})
+
+When('{actor} decides to redeploy it', async function (actor) {
+  this.logPage = await actor.followLastDeploymentUrl()
+  this.prevDeploymentId = actor.lookUpDeploymentId(this.logPage)
+  await actor.redeploy(this.logPage)
+})
+
+Then('{actor} sees the new deployment page', async function (actor) {
+  await actor.shouldSeeNewDeploymentDetails({
+    logPage: this.logPage,
+    prevDeploymentId: this.prevDeploymentId
+  })
 })

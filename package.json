@@ -8,7 +8,7 @@
     "yarn": ">=1.3.2"
   },
   "scripts": {
-    "dev": "nodemon --inspect index.js",
+    "dev": "DEBUG=pr-apps* nodemon --inspect index.js",
     "heroku-postbuild": "./scripts/postbuild"
   },
   "dependencies": {
@@ -30,7 +30,6 @@
   "devDependencies": {
     "basicauth-middleware": "^3.0.0",
     "chai": "^4.1.2",
-    "cheerio": "^1.0.0-rc.2",
     "cucumber": "^3.1.0",
     "cucumber-electron": "^2.3.1",
     "cucumber-pretty": "^1.3.2",
@@ -45,6 +44,7 @@
     "standard": "^10.0.3",
     "supports-color": "^5.1.0",
     "trytryagain": "^1.2.0",
-    "umzug": "^2.1.0"
+    "umzug": "^2.1.0",
+    "zombie": "^6.1.2"
   }
 }

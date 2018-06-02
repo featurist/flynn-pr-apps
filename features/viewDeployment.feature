@@ -9,3 +9,9 @@ Feature: View deployment
     Given Frank opened two pull requests
     When Frank closes one of them
     Then Frank can only see deploy logs of the other one
+
+  Scenario: redeploy
+    Given the deployment of Frank's pr apps has failed
+    When Frank decides to redeploy it
+    Then Frank sees the new deployment page
+    And Frank should see that deploy of a pr app has started

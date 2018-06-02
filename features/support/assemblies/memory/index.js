@@ -9,6 +9,7 @@ const GitMemory = require('./gitMemory')
 const BaseActor = require('./baseActor')
 const DeploymentRepoMemory = require('./deploymentRepoMemory')
 const ConfigLoaderMemory = require('./configLoaderMemory')
+const WorkQueueSync = require('./workQueueSync')
 
 module.exports = class MemoryAssembly {
   async setup () {}
@@ -39,6 +40,7 @@ module.exports = class MemoryAssembly {
 
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
+      workQueue: new WorkQueueSync(),
       scmProject: new GitProject({
         token: 'secret',
         remoteUrl: 'https://github.com/asdfsd/bbbb.git',
@@ -142,6 +144,16 @@ class MemoryActor extends BaseActor {
     return this.prAppsClient.getDeployment(lastDeployId)
   }
 
+  lookUpDeploymentId (deployment) {
+    return deployment.id
+  }
+
+  async shouldSeeNewDeploymentDetails ({prevDeploymentId}) {
+    const newDeployment = await this.followLastDeploymentUrl()
+    expect(newDeployment.id).to.exist // eslint-disable-line
+    expect(newDeployment.id).to.not.eq(prevDeploymentId)
+  }
+
   shouldSeeDeployLogs ({logs}) {
     expect(logs).to.deep.eql(['all done'])
   }
@@ -205,5 +217,9 @@ class MemoryActor extends BaseActor {
       const {name} = this.fakeFlynnApi.providers.find(p => p.id === r.provider)
       return name
     }).sort()).to.eql(resources.sort())
+  }
+
+  async redeploy (deployment) {
+    this.currentPrNotifier = await this.prAppsClient.redeploy(deployment)
   }
 }

@@ -6,6 +6,7 @@ const FlynnApiClient = require('../../../../lib/flynnApiClient')
 const ShellAdapter = require('../../../../lib/shellAdapter')
 const ConfigLoader = require('../../../../lib/configLoader')
 const DeploymentRepo = require('../../../../lib/deploymentRepo')
+const WorkQueue = require('../../../../lib/workQueue')
 const createPrAppsApp = require('../../../..')
 const startTestApp = require('../../startTestApp')
 const GitRepo = require('../github/gitRepo')
@@ -53,6 +54,7 @@ module.exports = class LocalAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
+      workQueue: new WorkQueue(),
       flynnApiClientFactory: (clusterDomain) => {
         return new FlynnApiClient({
           clusterDomain,

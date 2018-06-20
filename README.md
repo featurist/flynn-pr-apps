@@ -102,6 +102,16 @@ As above except with actual github (remote + api). Needs some extra environment:
 `TEST_GH_REPO` existing github repo (with username/org) that will be used in tests to simulate user workflow.
 `TEST_GH_USER_TOKEN` API token of the account that can has access (create webhooks, pull code) to the above repo.
 
+If you're offline (or want local test a bit faster) put the following in `/etc/hosts`:
+
+```
+127.0.0.1 pr-apps.prs.localtest.me
+127.0.0.1 git.prs.localtest.me
+127.0.0.1 controller.prs.localtest.me
+127.0.0.1 pr-23.prs.localtest.me
+127.0.0.1 pr-24.prs.localtest.me
+```
+
 ```
 ./test-real
 ```

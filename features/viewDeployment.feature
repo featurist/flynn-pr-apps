@@ -15,3 +15,8 @@ Feature: View deployment
     When Frank decides to redeploy it
     Then Frank sees the new deployment page
     And Frank should see that deploy of a pr app has started
+
+  Scenario: can not redeploy while another deployment is in progress
+    Given the deployment of Frank's PR is in progress
+    When Frank follows a deployment link from the last deploy
+    Then Frank can not start another deploy

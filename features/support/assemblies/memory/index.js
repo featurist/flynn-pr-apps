@@ -222,4 +222,6 @@ class MemoryActor extends BaseActor {
   async redeploy (deployment) {
     this.currentPrNotifier = await this.prAppsClient.redeploy(deployment)
   }
+
+  async shouldNotBeAbleToRedeploy () {}
 }

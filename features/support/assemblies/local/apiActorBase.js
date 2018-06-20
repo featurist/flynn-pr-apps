@@ -200,4 +200,8 @@ module.exports = class ApiActorBase extends BaseActor {
     expect(logPage.attribute('.deployedAppUrl', 'href'))
       .to.eq(`https://pr-${this.prNumber}.${this.fakeFlynnApi.clusterDomain}`)
   }
+
+  shouldNotBeAbleToRedeploy (logPage) {
+    expect(logPage.attribute('button.redeploy', 'disabled')).to.not.be.undefined // eslint-disable-line
+  }
 }

@@ -125,8 +125,8 @@ Then('{actor} sees that the deploy failed instantly', async function (actor) {
 })
 
 Then('{actor} can see the validation error', async function (actor) {
-  const lastDeployment = await actor.followLastDeploymentUrl()
-  actor.shouldSeeValidationError(lastDeployment)
+  const logPage = await actor.followLastDeploymentUrl()
+  actor.shouldSeeValidationError(logPage)
 })
 
 Given('{actor}\'s app needs environment variables {envVar} and {envVar}', function (actor, envVar1, envVar2) {
@@ -297,15 +297,15 @@ Then('{actor}\'s app environment should change to {envVar}, {envVar} and keep {e
 })
 
 When('{actor} follows a deployment link from the last deploy', async function (actor) {
-  this.lastDeployment = await actor.followLastDeploymentUrl()
+  this.logPage = await actor.followLastDeploymentUrl()
 })
 
 Then('{actor} sees details of that deployment', function (actor) {
-  actor.shouldSeeDeployLogs(this.lastDeployment)
-  actor.shouldSeeDeployStatus(this.lastDeployment)
-  actor.shouldSeeDeployedAppVersion(this.lastDeployment, this.scmVersion)
-  actor.shouldSeeLinkToFlynnApp(this.lastDeployment)
-  actor.shouldSeeLinkToDeployedApp(this.lastDeployment)
+  actor.shouldSeeDeployLogs(this.logPage)
+  actor.shouldSeeDeployStatus(this.logPage)
+  actor.shouldSeeDeployedAppVersion(this.logPage, this.scmVersion)
+  actor.shouldSeeLinkToFlynnApp(this.logPage)
+  actor.shouldSeeLinkToDeployedApp(this.logPage)
 })
 
 Given('{actor} opened two pull requests', async function (actor) {
@@ -353,4 +353,15 @@ Then('{actor} sees the new deployment page', async function (actor) {
     logPage: this.logPage,
     prevDeploymentId: this.prevDeploymentId
   })
+})
+
+Given('the deployment of {actor}\'s PR is in progress', async function (actor) {
+  await this.assembly.enablePrEvents()
+  await actor.pushBranch()
+  await actor.openPullRequest()
+  await actor.shouldSeeDeployStarted()
+})
+
+Then('{actor} can not start another deploy', async function (actor) {
+  await actor.shouldNotBeAbleToRedeploy(this.logPage)
 })

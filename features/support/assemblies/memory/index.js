@@ -1,5 +1,6 @@
 const yaml = require('js-yaml')
 const {expect} = require('chai')
+const retry = require('trytryagain')
 const PrApps = require('../../../../lib/prApps')
 const GitProject = require('../../../../lib/gitProject')
 const FlynnApiClientMemory = require('./flynnApiClientMemory')
@@ -9,7 +10,7 @@ const GitMemory = require('./gitMemory')
 const BaseActor = require('./baseActor')
 const DeploymentRepoMemory = require('./deploymentRepoMemory')
 const ConfigLoaderMemory = require('./configLoaderMemory')
-const WorkQueueSync = require('./workQueueSync')
+const WorkQueue = require('../../../../lib/workQueue')
 
 module.exports = class MemoryAssembly {
   async setup () {}
@@ -40,7 +41,7 @@ module.exports = class MemoryAssembly {
 
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
-      workQueue: new WorkQueueSync(),
+      workQueue: new WorkQueue({timeout: 10}),
       scmProject: new GitProject({
         token: 'secret',
         remoteUrl: 'https://github.com/asdfsd/bbbb.git',
@@ -99,15 +100,15 @@ class MemoryActor extends BaseActor {
   withClosedPullRequest () {}
 
   async openPullRequest ({prNumber = this.prNumber, branch = this.currentBranch} = {}) {
-    this.currentPrNotifier = await this.prAppsClient.openPullRequest(branch, prNumber)
+    return this.prAppsClient.openPullRequest(branch, prNumber)
   }
 
   async reopenPullRequest () {
-    this.currentPrNotifier = await this.prAppsClient.reopenPullRequest(this.currentBranch, this.prNumber)
+    return this.prAppsClient.reopenPullRequest(this.currentBranch, this.prNumber)
   }
 
   async pushMoreChanges () {
-    this.currentPrNotifier = await this.prAppsClient.pushMoreChanges(this.currentBranch, this.prNumber)
+    return this.prAppsClient.pushMoreChanges(this.currentBranch, this.prNumber)
   }
 
   async closePullRequest () {
@@ -118,28 +119,8 @@ class MemoryActor extends BaseActor {
     await this.prAppsClient.mergePullRequest(this.prNumber)
   }
 
-  async shouldSeeDeployStarted () {
-    await this.currentPrNotifier.waitForDeployStarted()
-  }
-
-  async shouldSeeDeployFinished () {
-    await this.currentPrNotifier.waitForDeployFinished()
-  }
-
-  async shouldSeeDeploySuccessful () {
-    await this.currentPrNotifier.waitForDeploySuccessful()
-  }
-
-  async shouldSeeDeployFailed (options) {
-    await this.currentPrNotifier.waitForDeployFailed(options)
-  }
-
-  getLastDeploymentUrl () {
-    return this.currentPrNotifier.getDeploymentUrl()
-  }
-
-  async followLastDeploymentUrl (url) {
-    url = url || this.getLastDeploymentUrl()
+  async followLastDeploymentUrl ({url, prNotifier} = {}) {
+    url = url || this.getLastDeploymentUrl(prNotifier)
     const [lastDeployId] = url.match(/[^/]+$/)
     return this.prAppsClient.getDeployment(lastDeployId)
   }
@@ -148,10 +129,12 @@ class MemoryActor extends BaseActor {
     return deployment.id
   }
 
-  async shouldSeeNewDeploymentDetails ({prevDeploymentId}) {
-    const newDeployment = await this.followLastDeploymentUrl()
-    expect(newDeployment.id).to.exist // eslint-disable-line
-    expect(newDeployment.id).to.not.eq(prevDeploymentId)
+  async shouldSeeNewDeploymentDetails ({prevDeploymentId, prNotifier}) {
+    await retry(async () => {
+      const newDeployment = await this.followLastDeploymentUrl({prNotifier})
+      expect(newDeployment.id).to.exist // eslint-disable-line
+      expect(Number(newDeployment.id)).to.be.above(Number(prevDeploymentId))
+    })
   }
 
   shouldSeeDeployLogs ({logs}) {
@@ -200,27 +183,33 @@ class MemoryActor extends BaseActor {
     this.configLoader.setConfig(yaml.safeLoad(config))
   }
 
-  assertEnvironmentSet (env) {
-    expect(this.fakeFlynnApi.firstApp().release.env).to.eql(env)
-  }
-
-  assertServiceIsUp ({service, domain}) {
-    expect(this.fakeFlynnApi.firstApp().routes).to.deep.include({
-      type: 'http',
-      service,
-      domain
+  async assertEnvironmentSet (env) {
+    await retry(() => {
+      expect(this.fakeFlynnApi.firstApp().release.env).to.eql(env)
     })
   }
 
-  assertResources (resources) {
-    expect(this.fakeFlynnApi.firstApp().resources.map(r => {
-      const {name} = this.fakeFlynnApi.providers.find(p => p.id === r.provider)
-      return name
-    }).sort()).to.eql(resources.sort())
+  async assertServiceIsUp ({service, domain}) {
+    await retry(() => {
+      expect(this.fakeFlynnApi.firstApp().routes).to.deep.include({
+        type: 'http',
+        service,
+        domain
+      })
+    })
+  }
+
+  async assertResources (resources) {
+    await retry(() => {
+      expect(this.fakeFlynnApi.firstApp().resources.map(r => {
+        const {name} = this.fakeFlynnApi.providers.find(p => p.id === r.provider)
+        return name
+      }).sort()).to.eql(resources.sort())
+    })
   }
 
   async redeploy (deployment) {
-    this.currentPrNotifier = await this.prAppsClient.redeploy(deployment)
+    return this.prAppsClient.redeploy(deployment)
   }
 
   async shouldNotBeAbleToRedeploy () {}

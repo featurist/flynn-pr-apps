@@ -39,3 +39,8 @@ Feature: Deploy Github pull request
     Given the deploy of Frank's broken pr app has started
     When the deploy fails
     Then Frank sees that the deploy failed
+
+  Scenario: User pushes more changes while a deploy is in progress
+    Given a deploy of Frank's pr app has started
+    When Frank pushes changes to the pr branch while deploy is still in progress
+    Then Frank's new deploy does not start until the current one is complete

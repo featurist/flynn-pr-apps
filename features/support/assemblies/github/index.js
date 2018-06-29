@@ -55,7 +55,7 @@ module.exports = class GithubAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      workQueue: new WorkQueue(),
+      workQueue: new WorkQueue({timeout: 10}),
       flynnApiClientFactory: (clusterDomain) => {
         return new FlynnApiClient({
           clusterDomain,
@@ -159,19 +159,19 @@ class GithubActor extends ApiActorBase {
 
   async openPullRequest ({branch = this.currentBranch} = {}) {
     const {prNotifier, prNumber} = await this.codeHostingService.openPullRequest(branch)
-    this.prNotifier = prNotifier
     this.prNumber = prNumber
-    return prNumber
+    return prNotifier
   }
 
   async reopenPullRequest () {
     const {prNotifier, prNumber} = await this.codeHostingService.reopenPullRequest(this.prNumber)
-    this.prNotifier = prNotifier
     this.prNumber = prNumber
+    return prNotifier
   }
 
   async pushMoreChanges () {
-    this.version = await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
+    await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
+    return this.codeHostingService.newPrNotifier(this.currentBranch)
   }
 
   async mergePullRequest (prNumber = this.prNumber) {

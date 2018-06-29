@@ -23,6 +23,12 @@ module.exports = class DeploymentRepoMemory {
     this.store[deployment.id] = deployment
   }
 
+  findPending (prNumber) {
+    return Object.values(this.store).find(d => {
+      return d.prNumber === prNumber && d.status === 'pending'
+    })
+  }
+
   deleteAppDeployments (prNumber) {
     Object.entries(this.store).forEach(([id, d]) => {
       if (d.prNumber === prNumber) {

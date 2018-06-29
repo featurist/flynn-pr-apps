@@ -45,4 +45,22 @@ module.exports = class PrNotifier {
     const {deploymentUrl} = this.prEventsListener.deploymentStatusEvents[this.prEventsListener.deploymentStatusEvents.length - 1]
     return deploymentUrl
   }
+
+  async assertDeploysAreSequential () {
+    await retry(() => {
+      expect(this.prEventsListener.deploymentStatusEvents.length).to.be.above(3)
+      this.prEventsListener.deploymentStatusEvents.reduce((prevEvent, event, i) => {
+        if (i > 0) {
+          if (prevEvent.status === 'pending') {
+            expect(event.deploymentUrl).to.eq(prevEvent.deploymentUrl)
+            expect(event.status).to.eq('success')
+          } else {
+            expect(event.deploymentUrl).to.not.eq(prevEvent.deploymentUrl)
+            expect(event.status).to.eq('pending')
+          }
+        }
+        return event
+      })
+    }, {timeout: retryTimeout})
+  }
 }

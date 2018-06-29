@@ -54,7 +54,7 @@ module.exports = class LocalAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      workQueue: new WorkQueue(),
+      workQueue: new WorkQueue({timeout: 10}),
       flynnApiClientFactory: (clusterDomain) => {
         return new FlynnApiClient({
           clusterDomain,
@@ -140,7 +140,7 @@ class LocalActor extends ApiActorBase {
     }
     await this.prAppsClient.post('/webhook', body)
 
-    this.prNotifier = new PrNotifier({
+    return new PrNotifier({
       prEventsListener: this.codeHostingServiceApi,
       branch,
       prNumber,
@@ -161,7 +161,7 @@ class LocalActor extends ApiActorBase {
     }
     await this.prAppsClient.post('/webhook', body)
 
-    this.prNotifier = new PrNotifier({
+    return new PrNotifier({
       prEventsListener: this.codeHostingServiceApi,
       branch: this.currentBranch,
       prNumber: this.prNumber,
@@ -196,7 +196,7 @@ class LocalActor extends ApiActorBase {
   }
 
   async pushMoreChanges () {
-    const version = await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
+    await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
     const body = {
       action: 'synchronize',
       number: this.prNumber,
@@ -207,6 +207,12 @@ class LocalActor extends ApiActorBase {
       }
     }
     await this.prAppsClient.post('/webhook', body)
-    return version
+
+    return new PrNotifier({
+      prEventsListener: this.codeHostingServiceApi,
+      branch: this.currentBranch,
+      prNumber: this.prNumber,
+      fakeFlynnApi: this.fakeFlynnApi
+    })
   }
 }

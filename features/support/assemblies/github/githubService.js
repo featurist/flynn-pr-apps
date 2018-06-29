@@ -63,11 +63,7 @@ module.exports = class GithubService {
       head: branch,
       base: 'master'
     })
-    const prNotifier = new PrNotifier({
-      prEventsListener: this.prEventsListener,
-      fakeFlynnApi: this.fakeFlynnApi,
-      branch: pr.head.ref
-    })
+    const prNotifier = this.newPrNotifier(pr.head.ref)
     return {prNotifier, prNumber: pr.number}
   }
 
@@ -108,11 +104,15 @@ module.exports = class GithubService {
     const pr = await this.ghApi.reopenPullRequest({
       number: prNumber
     })
-    const prNotifier = new PrNotifier({
+    const prNotifier = this.newPrNotifier(pr.head.ref)
+    return {prNotifier, prNumber: pr.number}
+  }
+
+  newPrNotifier (branch) {
+    return new PrNotifier({
       prEventsListener: this.prEventsListener,
       fakeFlynnApi: this.fakeFlynnApi,
-      branch: pr.head.ref
+      branch
     })
-    return {prNotifier, prNumber: pr.number}
   }
 }

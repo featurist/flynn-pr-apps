@@ -1,3 +1,4 @@
+@ci
 Feature: Automatically destroy Pr App
 
   Scenario: User merges pull request

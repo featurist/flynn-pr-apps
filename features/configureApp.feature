@@ -1,5 +1,6 @@
 Feature: Configure Pr App environment, resources, routes, etc.
 
+  @ci
   Scenario: Add environment variables to new pr app
     Given Frank's app needs environment variables "FOO=bar" and "STUFF=1"
     When Frank adds configuration file specifying extra environment

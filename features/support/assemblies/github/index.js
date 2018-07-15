@@ -55,7 +55,7 @@ module.exports = class GithubAssembly {
     const prApps = new PrApps({
       codeHostingServiceApi: this.codeHostingServiceApi,
       scmProject,
-      workQueue: new WorkQueue({timeout: 10}),
+      workQueue: new WorkQueue({timeout: 200}),
       flynnApiClientFactory: (clusterDomain) => {
         return new FlynnApiClient({
           clusterDomain,

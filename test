@@ -6,4 +6,4 @@ export COVERAGE=1
 standard $(git ls-files | grep -e '.js$')
 ./test-memory
 ./test-local
-./test-real
+./test-real --tags @ci

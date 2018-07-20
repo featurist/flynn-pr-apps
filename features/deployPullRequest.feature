@@ -47,6 +47,7 @@ Feature: Deploy Github pull request
     When the deploy fails
     Then Frank sees that the deploy failed
 
+  @ci
   Scenario: User pushes more changes while a deploy is in progress
     Given a deploy of Frank's pr app has started
     When Frank pushes changes to the pr branch while deploy is still in progress

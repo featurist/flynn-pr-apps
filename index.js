@@ -6,7 +6,6 @@ const path = require('path')
 const crypto = require('crypto')
 const bodyParser = require('body-parser')
 const morgan = require('morgan')
-const debug = require('debug')('pr-apps:web')
 const GithubApiAdapter = require('./lib/githubApiAdapter')
 const PrApps = require('./lib/prApps')
 const GitProject = require('./lib/gitProject')
@@ -18,6 +17,7 @@ const GitAdapter = require('./lib/gitAdapter')
 const ConfigLoader = require('./lib/configLoader')
 const {renderDeployment} = require('./lib/views')
 const WorkQueue = require('./lib/workQueue')
+const ContextDebug = require('./lib/contextDebug')
 
 function handleErrors (fn) {
   return function (req, res, next) {
@@ -44,15 +44,9 @@ function verifySignature (secret) {
   }
 }
 
-function setContext (req, res, next) {
-  req.context = {
-    eventType: req.get('X-GitHub-Event')
-  }
-  next()
-}
-
 function skipIrrelevantHooks (req, res, next) {
   const eventType = req.context.eventType
+  const debug = req.context.debug
 
   if (eventType === 'pull_request') {
     debug('Processing %s event', eventType)
@@ -63,12 +57,20 @@ function skipIrrelevantHooks (req, res, next) {
   }
 }
 
-module.exports = function ({prApps, webhookSecret}) {
+module.exports = function ({createPrApps, webhookSecret}) {
+  function setContext (req, res, next) {
+    const contextDebug = new ContextDebug()
+    req.context = {
+      eventType: req.get('X-GitHub-Event'),
+      prApps: createPrApps(contextDebug),
+      debug: contextDebug('pr-apps:web')
+    }
+    next()
+  }
+
   const app = express()
 
-  if (debug.enabled) {
-    app.use(morgan('dev'))
-  }
+  app.use(morgan('dev'))
   app.use(bodyParser.json())
 
   app.post('/webhook',
@@ -86,7 +88,10 @@ module.exports = function ({prApps, webhookSecret}) {
         }
       } = req.body
 
+      const debug = req.context.debug
       debug('pull_request action', action)
+
+      const prApps = req.context.prApps
 
       if (action === 'opened' || action === 'reopened') {
         debug('Initiating new deploy')
@@ -106,10 +111,10 @@ module.exports = function ({prApps, webhookSecret}) {
       }
     }))
 
-  app.get('/deployments/:deploymentId', handleErrors(async (req, res) => {
+  app.get('/deployments/:deploymentId', setContext, handleErrors(async (req, res) => {
     res.type('html')
 
-    const deployment = await prApps.getDeployment(req.params.deploymentId)
+    const deployment = await req.context.prApps.getDeployment(req.params.deploymentId)
     if (deployment) {
       res.send(renderDeployment(deployment))
     } else {
@@ -117,9 +122,9 @@ module.exports = function ({prApps, webhookSecret}) {
     }
   }))
 
-  app.post('/deployments/:deploymentId/redeploy', handleErrors(async (req, res) => {
-    const deployment = await prApps.getDeployment(req.params.deploymentId)
-    const newDeployment = await prApps.deployUpdate(deployment)
+  app.post('/deployments/:deploymentId/redeploy', setContext, handleErrors(async (req, res) => {
+    const deployment = await req.context.prApps.getDeployment(req.params.deploymentId)
+    const newDeployment = await req.context.prApps.deployUpdate(deployment)
     res.redirect(`/deployments/${newDeployment.id}`)
   }))
 
@@ -131,39 +136,45 @@ module.exports = function ({prApps, webhookSecret}) {
 }
 
 if (!module.parent) {
-  const fs = new FsAdapter()
-  const git = new GitAdapter({fs})
+  const createPrApps = (contextDebug) => {
+    const fs = new FsAdapter({contextDebug})
+    const git = new GitAdapter({fs, contextDebug})
 
-  const scmProject = new GitProject({
-    token: process.env.GH_USER_TOKEN,
-    remoteUrl: process.env.GH_REPO,
-    git
-  })
-  const codeHostingServiceApi = new GithubApiAdapter({
-    token: process.env.GH_USER_TOKEN,
-    repo: process.env.GH_REPO
-  })
+    const scmProject = new GitProject({
+      token: process.env.GH_USER_TOKEN,
+      remoteUrl: process.env.GH_REPO,
+      git
+    })
+    const codeHostingServiceApi = new GithubApiAdapter({
+      token: process.env.GH_USER_TOKEN,
+      repo: process.env.GH_REPO,
+      contextDebug
+    })
 
-  const flynnApiClientFactory = (clusterDomain) => {
-    return new FlynnApiClient({
-      authKey: process.env.FLYNN_AUTH_KEY,
-      clusterDomain
+    const flynnApiClientFactory = (clusterDomain) => {
+      return new FlynnApiClient({
+        authKey: process.env.FLYNN_AUTH_KEY,
+        clusterDomain,
+        contextDebug
+      })
+    }
+
+    const deploymentRepo = new DeploymentRepo(db)
+
+    return new PrApps({
+      contextDebug,
+      codeHostingServiceApi,
+      scmProject,
+      flynnApiClientFactory,
+      deploymentRepo,
+      workQueue: new WorkQueue({contextDebug}),
+      appInfo: require('./appInfo.json')[0],
+      configLoader: new ConfigLoader({contextDebug})
     })
   }
-
-  const deploymentRepo = new DeploymentRepo(db)
-
-  const prApps = new PrApps({
-    codeHostingServiceApi,
-    scmProject,
-    flynnApiClientFactory,
-    deploymentRepo,
-    workQueue: new WorkQueue(),
-    appInfo: require('./appInfo.json')[0],
-    configLoader: new ConfigLoader()
-  })
   const port = process.env.PORT || 5599
-  module.exports({prApps, webhookSecret: process.env.WEBHOOK_SECRET}).listen(port, function () {
+
+  module.exports({createPrApps, webhookSecret: process.env.WEBHOOK_SECRET}).listen(port, function () {
     console.info('pr-apps is listening on %s', port)
   })
 }

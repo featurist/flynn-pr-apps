@@ -377,5 +377,5 @@ Given('a deploy of {actor}\'s pr app has started', async function (actor) {
 })
 
 When('{actor} pushes changes to the pr branch while deploy is still in progress', async function (actor) {
-  await actor.pushMoreChanges()
+  this.prNotifier = await actor.pushMoreChanges()
 })

@@ -28,46 +28,53 @@ module.exports = class GithubAssembly {
   }
 
   async start () {
-    const fs = new FsAdapter()
-    const git = new GitAdapter({fs})
-    const scmProject = new GitProject({
-      remoteUrl: process.env.TEST_GH_REPO,
-      token: process.env.TEST_GH_USER_TOKEN,
-      git
-    })
-
-    this.codeHostingServiceApi = new GithubApiAdapter({
-      repo: process.env.TEST_GH_REPO,
-      token: process.env.TEST_GH_USER_TOKEN
-    })
-
     const fakeFlynnApiPort = await getRandomPort()
     this.clusterDomain = `prs.localtest.me:${fakeFlynnApiPort}`
 
     this.fakeFlynnApi = new FakeFlynnApi({
       authKey: 'flynnApiAuthKey',
-      port: fakeFlynnApiPort,
       clusterDomain: this.clusterDomain
     })
 
-    const deploymentRepo = new DeploymentRepo(db)
+    const createPrApps = (contextDebug) => {
+      this.codeHostingServiceApi = new GithubApiAdapter({
+        repo: process.env.TEST_GH_REPO,
+        token: process.env.TEST_GH_USER_TOKEN,
+        contextDebug
+      })
 
-    const prApps = new PrApps({
-      codeHostingServiceApi: this.codeHostingServiceApi,
-      scmProject,
-      workQueue: new WorkQueue({timeout: 200}),
-      flynnApiClientFactory: (clusterDomain) => {
-        return new FlynnApiClient({
-          clusterDomain,
-          authKey: 'flynnApiAuthKey'
-        })
-      },
-      appInfo: {
-        domain: `pr-apps.${this.clusterDomain}`
-      },
-      deploymentRepo,
-      configLoader: new ConfigLoader()
-    })
+      const deploymentRepo = new DeploymentRepo(db)
+
+      const git = new GitAdapter({
+        fs: new FsAdapter({contextDebug}),
+        contextDebug
+      })
+
+      const scmProject = new GitProject({
+        remoteUrl: process.env.TEST_GH_REPO,
+        token: process.env.TEST_GH_USER_TOKEN,
+        git
+      })
+
+      return new PrApps({
+        contextDebug,
+        codeHostingServiceApi: this.codeHostingServiceApi,
+        scmProject,
+        workQueue: new WorkQueue({timeout: 200, contextDebug}),
+        flynnApiClientFactory: (clusterDomain) => {
+          return new FlynnApiClient({
+            clusterDomain,
+            authKey: 'flynnApiAuthKey',
+            contextDebug
+          })
+        },
+        appInfo: {
+          domain: `pr-apps.${this.clusterDomain}`
+        },
+        deploymentRepo,
+        configLoader: new ConfigLoader({contextDebug})
+      })
+    }
 
     const ghApi = new GithubApi({
       repo: process.env.TEST_GH_REPO,
@@ -77,7 +84,7 @@ module.exports = class GithubAssembly {
     this.serverWithSubdomains = startTestApp({
       prAppsApp: createPrAppsApp({
         webhookSecret: 'bananas',
-        prApps
+        createPrApps
       }),
       fakeFlynnApi: this.fakeFlynnApi,
       port: fakeFlynnApiPort
@@ -86,7 +93,7 @@ module.exports = class GithubAssembly {
     this.webhookSecret = 'webhook secret'
     const prAppsApp = createPrAppsApp({
       webhookSecret: this.webhookSecret,
-      prApps
+      createPrApps
     })
     this.prNotifierApp = createPrNotifierApp({ghApi})
     prAppsApp.use(this.prNotifierApp)
@@ -100,7 +107,7 @@ module.exports = class GithubAssembly {
 
     this.codeHostingService = new GithubService({
       ghApi,
-      prEventsListener: this.prNotifierApp,
+      deploymentStatusEvents: this.prNotifierApp.deploymentStatusEvents,
       fakeFlynnApi: this.fakeFlynnApi
     })
 
@@ -114,7 +121,9 @@ module.exports = class GithubAssembly {
   }
 
   async stop () {
-    this.codeHostingServiceApi.disable()
+    if (this.codeHostingServiceApi) {
+      this.codeHostingServiceApi.disable()
+    }
     await Promise.all([
       this.ghAccessiblePrAppsServer
         ? new Promise(resolve => this.ghAccessiblePrAppsServer.close(resolve))

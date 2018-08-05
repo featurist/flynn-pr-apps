@@ -1,5 +1,3 @@
-const debug = require('debug')('pr-apps:test:codeHostingServiceApiMemory')
-
 async function simulateAsync () {
   return new Promise((resolve, reject) => {
     setTimeout(resolve)
@@ -7,13 +5,14 @@ async function simulateAsync () {
 }
 
 module.exports = class CodeHostingServiceApiMemory {
-  constructor () {
-    this.deploymentStatusEvents = []
+  constructor ({deploymentStatusEvents, contextDebug = require('debug')}) {
+    this.deploymentStatusEvents = deploymentStatusEvents
+    this.debug = contextDebug('pr-apps:test:codeHostingServiceApiMemory')
   }
 
   async createDeployment (branch) {
     await simulateAsync()
-    debug('Creating deployment for branch %s', branch)
+    this.debug('Creating deployment for branch %s', branch)
     return {
       branch
     }
@@ -27,7 +26,7 @@ module.exports = class CodeHostingServiceApiMemory {
       deployedAppUrl,
       deploymentUrl
     }
-    debug('Updating deployment status %o', update)
+    this.debug('Updating deployment status %o', update)
     this.deploymentStatusEvents.push(update)
   }
 }

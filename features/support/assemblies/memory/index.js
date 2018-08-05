@@ -34,7 +34,8 @@ module.exports = class MemoryAssembly {
       fakeFlynnApi: this.fakeFlynnApi
     })
 
-    this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
+    const deploymentStatusEvents = []
+    this.codeHostingServiceApi = new CodeHostingServiceApiMemory({deploymentStatusEvents})
     const configLoader = new ConfigLoaderMemory()
 
     this.clusterDomain = 'prs.example.com'
@@ -59,6 +60,7 @@ module.exports = class MemoryAssembly {
     })
     this.prAppsClient = new PrAppsClientMemory({
       prApps,
+      deploymentStatusEvents,
       fakeFlynnApi: this.fakeFlynnApi
     })
 

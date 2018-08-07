@@ -2,6 +2,5 @@
 
 . ./scripts/test_commands.sh
 export CUCUMBER_ASSEMBLY=github
-export RETRY_TIMEOUT=20000
 
 cucumber_normal "$@"

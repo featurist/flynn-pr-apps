@@ -1,1 +1,1 @@
-web: ./scripts/downloadAppInfo.sh && node index.js
+web: ./scripts/downloadAppInfo.sh && DEBUG=pr-apps* node index.js

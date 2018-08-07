@@ -9,6 +9,7 @@
   },
   "scripts": {
     "dev": "DEBUG=pr-apps* nodemon --inspect index.js",
+    "test": "./test-memory && ./test-local && ./test-real",
     "heroku-postbuild": "./scripts/postbuild"
   },
   "dependencies": {

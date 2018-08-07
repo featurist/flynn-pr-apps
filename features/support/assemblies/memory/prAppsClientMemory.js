@@ -1,9 +1,10 @@
 const PrNotifier = require('./prNotifier')
 
 module.exports = class PrAppsClientMemory {
-  constructor ({prApps, fakeFlynnApi}) {
+  constructor ({prApps, fakeFlynnApi, deploymentStatusEvents}) {
     this.prApps = prApps
     this.fakeFlynnApi = fakeFlynnApi
+    this.deploymentStatusEvents = deploymentStatusEvents
   }
 
   enable () {
@@ -13,7 +14,7 @@ module.exports = class PrAppsClientMemory {
   async redeploy ({branch, prNumber}) {
     await this.prApps.deployUpdate({branch, prNumber})
     return new PrNotifier({
-      prEventsListener: this.prApps.codeHostingServiceApi,
+      deploymentStatusEvents: this.deploymentStatusEvents,
       prNumber,
       fakeFlynnApi: this.fakeFlynnApi,
       branch
@@ -28,7 +29,7 @@ module.exports = class PrAppsClientMemory {
         console.error(e)
       }
       return new PrNotifier({
-        prEventsListener: this.prApps.codeHostingServiceApi,
+        deploymentStatusEvents: this.deploymentStatusEvents,
         prNumber,
         fakeFlynnApi: this.fakeFlynnApi,
         branch
@@ -40,7 +41,7 @@ module.exports = class PrAppsClientMemory {
     if (this.enabled) {
       await this.prApps.deployPullRequest({branch, prNumber})
       return new PrNotifier({
-        prEventsListener: this.prApps.codeHostingServiceApi,
+        deploymentStatusEvents: this.deploymentStatusEvents,
         prNumber,
         fakeFlynnApi: this.fakeFlynnApi,
         branch
@@ -56,7 +57,7 @@ module.exports = class PrAppsClientMemory {
         console.error(e)
       }
       return new PrNotifier({
-        prEventsListener: this.prApps.codeHostingServiceApi,
+        deploymentStatusEvents: this.deploymentStatusEvents,
         prNumber,
         fakeFlynnApi: this.fakeFlynnApi,
         branch

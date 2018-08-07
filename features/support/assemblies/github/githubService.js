@@ -2,9 +2,9 @@ const PrNotifier = require('../memory/prNotifier')
 const debug = require('debug')('pr-apps:test:githubService')
 
 module.exports = class GithubService {
-  constructor ({prEventsListener, ghApi, fakeFlynnApi}) {
+  constructor ({deploymentStatusEvents, ghApi, fakeFlynnApi}) {
     this.ghApi = ghApi
-    this.prEventsListener = prEventsListener
+    this.deploymentStatusEvents = deploymentStatusEvents
     this.fakeFlynnApi = fakeFlynnApi
   }
 
@@ -63,11 +63,7 @@ module.exports = class GithubService {
       head: branch,
       base: 'master'
     })
-    const prNotifier = new PrNotifier({
-      prEventsListener: this.prEventsListener,
-      fakeFlynnApi: this.fakeFlynnApi,
-      branch: pr.head.ref
-    })
+    const prNotifier = this.newPrNotifier(pr.head.ref)
     return {prNotifier, prNumber: pr.number}
   }
 
@@ -108,11 +104,15 @@ module.exports = class GithubService {
     const pr = await this.ghApi.reopenPullRequest({
       number: prNumber
     })
-    const prNotifier = new PrNotifier({
-      prEventsListener: this.prEventsListener,
-      fakeFlynnApi: this.fakeFlynnApi,
-      branch: pr.head.ref
-    })
+    const prNotifier = this.newPrNotifier(pr.head.ref)
     return {prNotifier, prNumber: pr.number}
+  }
+
+  newPrNotifier (branch) {
+    return new PrNotifier({
+      deploymentStatusEvents: this.deploymentStatusEvents,
+      fakeFlynnApi: this.fakeFlynnApi,
+      branch
+    })
   }
 }

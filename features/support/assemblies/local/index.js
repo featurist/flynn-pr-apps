@@ -27,19 +27,6 @@ module.exports = class LocalAssembly {
       getRandomPort(),
       resetDb(db)
     ])
-
-    this.fs = new FsAdapter()
-    const git = new GitAdapter({fs: this.fs})
-
-    this.remoteRepoPath = this.fs.makeTempDir()
-    const remoteRepoSh = new ShellAdapter({cwd: this.remoteRepoPath})
-
-    const remoteUrl = `file:///${this.remoteRepoPath}`
-    const scmProject = new GitProject({
-      remoteUrl,
-      git
-    })
-
     this.clusterDomain = `prs.localtest.me:${port}`
 
     this.fakeFlynnApi = new FakeFlynnApi({
@@ -47,31 +34,53 @@ module.exports = class LocalAssembly {
       clusterDomain: this.clusterDomain
     })
 
-    this.codeHostingServiceApi = new CodeHostingServiceApiMemory()
+    this.remoteRepoPath = new FsAdapter().makeTempDir()
+    const remoteUrl = `file:///${this.remoteRepoPath}`
+    const remoteRepoSh = new ShellAdapter({cwd: this.remoteRepoPath})
+    this.deploymentStatusEvents = []
 
-    const deploymentRepo = new DeploymentRepo(db)
+    const createPrApps = (contextDebug) => {
+      this.codeHostingServiceApi = new CodeHostingServiceApiMemory({
+        deploymentStatusEvents: this.deploymentStatusEvents,
+        contextDebug
+      })
 
-    const prApps = new PrApps({
-      codeHostingServiceApi: this.codeHostingServiceApi,
-      scmProject,
-      workQueue: new WorkQueue(),
-      flynnApiClientFactory: (clusterDomain) => {
-        return new FlynnApiClient({
-          clusterDomain,
-          authKey: 'flynnApiAuthKey'
-        })
-      },
-      appInfo: {
-        domain: `pr-apps.${this.clusterDomain}`
-      },
-      deploymentRepo,
-      configLoader: new ConfigLoader()
-    })
+      const git = new GitAdapter({
+        fs: new FsAdapter({contextDebug}),
+        contextDebug
+      })
+
+      const scmProject = new GitProject({
+        remoteUrl,
+        git
+      })
+
+      const deploymentRepo = new DeploymentRepo(db)
+
+      return new PrApps({
+        contextDebug,
+        codeHostingServiceApi: this.codeHostingServiceApi,
+        scmProject,
+        workQueue: new WorkQueue({timeout: 200, contextDebug}),
+        flynnApiClientFactory: (clusterDomain) => {
+          return new FlynnApiClient({
+            clusterDomain,
+            authKey: 'flynnApiAuthKey',
+            contextDebug
+          })
+        },
+        appInfo: {
+          domain: `pr-apps.${this.clusterDomain}`
+        },
+        deploymentRepo,
+        configLoader: new ConfigLoader({contextDebug})
+      })
+    }
 
     this.webhookSecret = 'webhook secret'
     const prAppsApp = createPrAppsApp({
       webhookSecret: this.webhookSecret,
-      prApps
+      createPrApps
     })
 
     this.userLocalRepo = new GitRepo({remoteUrl})
@@ -97,7 +106,7 @@ module.exports = class LocalAssembly {
         ? new Promise(resolve => this.prAppsServer.close(resolve))
         : Promise.resolve()
     ])
-    this.fs.rmRf(this.remoteRepoPath)
+    new FsAdapter().rmRf(this.remoteRepoPath)
     await this.userLocalRepo.destroy()
   }
 
@@ -109,7 +118,7 @@ module.exports = class LocalAssembly {
     return new LocalActor({
       userLocalRepo: this.userLocalRepo,
       prAppsClient: this.prAppsClient,
-      codeHostingServiceApi: this.codeHostingServiceApi,
+      deploymentStatusEvents: this.deploymentStatusEvents,
       fakeFlynnApi: this.fakeFlynnApi
     })
   }
@@ -117,14 +126,14 @@ module.exports = class LocalAssembly {
 
 class LocalActor extends ApiActorBase {
   constructor ({
-    codeHostingServiceApi,
+    deploymentStatusEvents,
     userLocalRepo,
     prAppsClient,
     fakeFlynnApi
   }) {
     super({userLocalRepo, fakeFlynnApi, currentBranch: 'Feature1'})
     this.prAppsClient = prAppsClient
-    this.codeHostingServiceApi = codeHostingServiceApi
+    this.deploymentStatusEvents = deploymentStatusEvents
     this.prNumber = 23
   }
 
@@ -140,8 +149,8 @@ class LocalActor extends ApiActorBase {
     }
     await this.prAppsClient.post('/webhook', body)
 
-    this.prNotifier = new PrNotifier({
-      prEventsListener: this.codeHostingServiceApi,
+    return new PrNotifier({
+      deploymentStatusEvents: this.deploymentStatusEvents,
       branch,
       prNumber,
       fakeFlynnApi: this.fakeFlynnApi
@@ -161,8 +170,8 @@ class LocalActor extends ApiActorBase {
     }
     await this.prAppsClient.post('/webhook', body)
 
-    this.prNotifier = new PrNotifier({
-      prEventsListener: this.codeHostingServiceApi,
+    return new PrNotifier({
+      deploymentStatusEvents: this.deploymentStatusEvents,
       branch: this.currentBranch,
       prNumber: this.prNumber,
       fakeFlynnApi: this.fakeFlynnApi
@@ -196,7 +205,7 @@ class LocalActor extends ApiActorBase {
   }
 
   async pushMoreChanges () {
-    const version = await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
+    await this.userLocalRepo.pushBranch(this.currentBranch, '<p>This is Pr Apps</p>')
     const body = {
       action: 'synchronize',
       number: this.prNumber,
@@ -207,6 +216,12 @@ class LocalActor extends ApiActorBase {
       }
     }
     await this.prAppsClient.post('/webhook', body)
-    return version
+
+    return new PrNotifier({
+      deploymentStatusEvents: this.deploymentStatusEvents,
+      branch: this.currentBranch,
+      prNumber: this.prNumber,
+      fakeFlynnApi: this.fakeFlynnApi
+    })
   }
 }

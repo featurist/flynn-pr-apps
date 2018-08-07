@@ -51,30 +51,10 @@ module.exports = class ApiActorBase extends BaseActor {
     await logPage.clickButton('⟳ redeploy')
   }
 
-  async shouldSeeDeployStarted () {
-    await this.prNotifier.waitForDeployStarted()
-  }
-
-  async shouldSeeDeployFinished () {
-    await this.prNotifier.waitForDeployFinished()
-  }
-
-  async shouldSeeDeploySuccessful () {
-    await this.prNotifier.waitForDeploySuccessful()
-  }
-
-  async shouldSeeDeployFailed (options) {
-    await this.prNotifier.waitForDeployFailed(options)
-  }
-
   async followDeployedAppLink (appName = `pr-${this.prNumber}`) {
     const browser = new HeadlessBrowser()
     const deployedAppUrl = `https://${appName}.${this.fakeFlynnApi.clusterDomain}`
     this.appIndexPageContent = await browser.visit(deployedAppUrl)
-  }
-
-  getLastDeploymentUrl () {
-    return this.prNotifier.getDeploymentUrl()
   }
 
   async shouldSeeNewApp () {
@@ -89,7 +69,7 @@ module.exports = class ApiActorBase extends BaseActor {
     await retry(async () => {
       await this.followDeployedAppLink(appName)
       expect(this.appIndexPageContent.text()).to.eq('Pr App Not Found')
-    }, {timeout: retryTimeout, interval: 500})
+    }, {timeout: retryTimeout, interval: 100})
   }
 
   async addPrAppConfig (config) {
@@ -145,9 +125,9 @@ module.exports = class ApiActorBase extends BaseActor {
     expect(this.fakeFlynnApi.apps.size).to.eq(0)
   }
 
-  async followLastDeploymentUrl () {
+  async followLastDeploymentUrl ({url, prNotifier} = {}) {
     const browser = new HeadlessBrowser()
-    const deploymentUrl = this.prNotifier.getDeploymentUrl()
+    const deploymentUrl = url || prNotifier.getDeploymentUrl()
     return browser.visit(deploymentUrl)
   }
 
@@ -157,10 +137,13 @@ module.exports = class ApiActorBase extends BaseActor {
     return lastDeployId
   }
 
-  shouldSeeNewDeploymentDetails ({logPage, prevDeploymentId}) {
-    const deploymentId = this.lookUpDeploymentId(logPage)
-    expect(deploymentId).to.match(/^[^\s]{36}$/)
-    expect(deploymentId).to.not.eq(prevDeploymentId)
+  async shouldSeeNewDeploymentDetails ({prNotifier, prevDeploymentId}) {
+    await retry(async () => {
+      const logPage = await this.followLastDeploymentUrl({prNotifier})
+      const deploymentId = this.lookUpDeploymentId(logPage)
+      expect(deploymentId).to.match(/^[^\s]{36}$/)
+      expect(deploymentId).to.not.eq(prevDeploymentId)
+    }, {timeout: retryTimeout})
   }
 
   async shouldNotSeeDeployLogs (deploymentUrl) {

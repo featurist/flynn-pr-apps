@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 
 . ./scripts/test_commands.sh
-RETRY_TIMEOUT=2000 CUCUMBER_ASSEMBLY=local cucumber_normal "$@"
+CUCUMBER_ASSEMBLY=local RETRY_TIMEOUT=${RETRY_TIMEOUT:-2000} cucumber_normal "$@"

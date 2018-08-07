@@ -1,5 +1,6 @@
 Feature: View deployment
 
+  @ci
   Scenario: view deployment page of a deployed pr app
     Given Frank opened a pull request
     When Frank follows a deployment link from the last deploy

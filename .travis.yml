@@ -7,7 +7,7 @@ env:
     - DEBUG="pr-apps*"
     - DEBUG_COLORS=yes
     - FAIL_FAST=1
-    - RETRY_TIMEOUT=90000
+    - COVERAGE=1
     - SLEEP_BETWEEN_TESTS=5000
     - SLOW_DOWN_DEPLOY=1
     - TEST_GH_REPO=https://github.com/featurist/pr-apps-test-repo.git
@@ -16,4 +16,7 @@ before_script:
   - yarn sequelize db:create
 cache: yarn
 script:
-  - ./test
+  - "./node_modules/.bin/standard $(git ls-files | grep -e '.js$')"
+  - ./test-memory
+  - ./test-local
+  - "RETRY_TIMEOUT=90000 ./test-real --tags @ci"
